@@ -20,14 +20,14 @@ player, week, snaps, targets, catches, rec_yards, rush_yards, touchdowns, drops,
 ## How to run
 1. Ensure Python 3.9+ and packages are installed (from the project root):
    ```bash
-   /Users/mitchelldawkins/Projects/scripts/venv/bin/pip install -U pandas reportlab pypdf
+   /scripts/venv/bin/pip install -U pandas reportlab pypdf
    ```
 2. Save your data as CSV (see examples in `csv/`).
 3. Run grading and send everything to a folder you name (e.g., `Wk7_Out`):
    ```bash
-   /Users/mitchelldawkins/Projects/scripts/venv/bin/python /Users/mitchelldawkins/Projects/scripts/film_grade.py \
-     /Users/mitchelldawkins/Projects/scripts/csv/Wk7_Fruitport.csv \
-     --out_dir /Users/mitchelldawkins/Projects/scripts/Wk7_Out \
+   /scripts/venv/bin/python /scripts/film_grade.py \
+     /scripts/csv/Wk7_Fruitport.csv \
+     --out_dir /scripts/Wk7_Out \
      --out results_Wk7_Fruitport.csv
    ```
 4. Outputs inside your folder:
@@ -36,11 +36,11 @@ player, week, snaps, targets, catches, rec_yards, rush_yards, touchdowns, drops,
    - `<out_dir>/reports/*.txt` — player review text reports (`<Player>_<Week>.txt`)
 5. Optional: generate PDFs (player reports + a summary PDF) into a `pdfs/` subfolder:
    ```bash
-   /Users/mitchelldawkins/Projects/scripts/venv/bin/python /Users/mitchelldawkins/Projects/scripts/tools/make_pdfs.py \
-     --reports_dir /Users/mitchelldawkins/Projects/scripts/Wk7_Out/reports \
-     --out_dir /Users/mitchelldawkins/Projects/scripts/Wk7_Out/pdfs \
-     --summary_csv /Users/mitchelldawkins/Projects/scripts/Wk7_Out/results_Wk7_Fruitport_summary.csv \
-     --details_csv /Users/mitchelldawkins/Projects/scripts/Wk7_Out/results_Wk7_Fruitport.csv \
+   /scripts/venv/bin/python /scripts/tools/make_pdfs.py \
+     --reports_dir /scripts/Wk7_Out/reports \
+     --out_dir /scripts/Wk7_Out/pdfs \
+     --summary_csv /scripts/Wk7_Out/results_Wk7_Fruitport_summary.csv \
+     --details_csv /scripts/Wk7_Out/results_Wk7_Fruitport.csv \
      --title "Week 7 Summary"
    ```
 
@@ -69,13 +69,13 @@ The script computes:
 
 Run:
 ```bash
-/Users/mitchelldawkins/Projects/scripts/venv/bin/python /Users/mitchelldawkins/Projects/scripts/film_grade.py input.csv --out_dir /absolute/path/to/MyWeekOut --out results.csv
+/scripts/venv/bin/python /scripts/film_grade.py input.csv --out_dir /absolute/path/to/MyWeekOut --out results.csv
 ```
 
 ## All-in-one command (prep → grade → PDFs)
 
 ```bash
-cd /Users/mitchelldawkins/Projects/scripts && \
+cd /scripts && \
 WEEK=7 OUT=out/Wk$WEEK && \
 ./venv/bin/python tools/prep_wk7.py csv/Wk7_Fruitport.csv --out $OUT/Wk${WEEK}_Fruitport_prepared.csv --week $WEEK && \
 ./venv/bin/python film_grade.py $OUT/Wk${WEEK}_Fruitport_prepared.csv --out_dir $OUT --out results_Wk${WEEK}_Fruitport.csv && \
