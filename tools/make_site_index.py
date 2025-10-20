@@ -89,6 +89,21 @@ def main():
     </div>
   </div>
 
+  <div class="section" style="margin-top:18px">
+    <details open>
+      <summary><b>How to score well</b></summary>
+      <ul>
+        <li><b>Relentless effort every rep</b>: finish full speed, strain on blocks (earn Relentless Effort, avoid Loaf/Not Full Speed).</li>
+        <li><b>Master your assignment</b>: split, depth, route landmark, adjust vs coverage (avoid Missed Assignment).</li>
+        <li><b>Elite, crisp routes</b>: full depth, explode out, hold leverage (earn Elite Route/Good Route, avoid Bad Route).</li>
+        <li><b>Win the ball</b>: eyes-to-tuck, high-point, squeeze through contact (earn Spectacular Catch, avoid Dropped Pass).</li>
+        <li><b>Add yards and chains</b>: fight through contact; Catch/Rush yardage = +0.5 per yard; First Downs +5.</li>
+        <li><b>Dominate run game</b>: position + hand fit + run feet (Good Block +2, Pancake +10).</li>
+        <li><b>Finish drives</b>: Touchdowns are +15; red-zone detail matters.</li>
+      </ul>
+      <div class="muted">Rubric: Touchdown +15, Relentless Effort +5, Elite Route +7, Good Route +2, Catch/Rush yardage +0.5/yd, Good Block +2, Pancake +10, First Down +5, Spectacular Catch +10; Missed Assignment -10, Dropped Pass -15, Bad Route -2, Loaf (Laziness) -2, Not Full Speed -3, Whiffed -1, Holding 0.</div>
+    </details>
+  </div>
   <div class=\"section\">
     <h2>Weeks</h2>
     <table>
