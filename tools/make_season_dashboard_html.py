@@ -80,17 +80,33 @@ def collect_code_counts(df_sub: pd.DataFrame) -> dict:
 
 def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, breadcrumbs_html: str = "", weekly_links_html: str = "") -> str:
     css = """
-    body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; }
-    h1 { margin: 0 0 4px 0; }
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --row: #ffffff;
+      --row-alt: #f9fafb;
+      --thead: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+      --border: #e5e7eb;
+    }
+    body { font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }
+    h1 { margin: 0 0 6px 0; font-weight: 700; letter-spacing: -0.01em; }
     h2 { margin-top: 24px; }
-    table { border-collapse: collapse; width: 100%; margin-bottom: 14px; }
-    th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; vertical-align: top; }
-    th { background: #f5f5f5; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .small { color: #555; font-size: 12px; }
+    .small { color: var(--muted); font-size: 12px; }
     .breadcrumbs { font-size: 12px; color: #666; margin-bottom: 8px; }
-    .breadcrumbs a { color: #0070f3; text-decoration: none; }
+    .breadcrumbs a { color: var(--primary); text-decoration: none; }
     .breadcrumbs a:hover { text-decoration: underline; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+    thead th { background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; }
+    tbody td, td { padding: 12px 14px; border-top: 1px solid var(--border); }
+    tbody tr:nth-child(odd) { background: var(--row); }
+    tbody tr:nth-child(even) { background: var(--row-alt); }
+    tbody tr:hover { background: #eef2ff; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
     """
 
     metrics_rows = [
@@ -358,21 +374,30 @@ def main():
   <meta charset=\"utf-8\" />
   <title>{html.escape(args.title)}</title>
   <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; }}
-    table {{ border-collapse: collapse; width: 100%; }}
-    th, td {{ border: 1px solid #ccc; padding: 6px 8px; text-align: left; }}
-    th {{ background: #f5f5f5; }}
+    :root {{
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #111827;
+      --border: #e5e7eb;
+      --thead: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+      --primary: #2563eb;
+    }}
+    body {{ font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }}
     .breadcrumbs {{ font-size: 12px; color: #666; margin-bottom: 8px; }}
-    .breadcrumbs a {{ color: #0070f3; text-decoration: none; }}
+    .breadcrumbs a {{ color: var(--primary); text-decoration: none; }}
     .breadcrumbs a:hover {{ text-decoration: underline; }}
+    table {{ width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }}
+    thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; }}
+    tbody td {{ padding: 12px 14px; border-top: 1px solid var(--border); }}
+    tbody tr:nth-child(even) {{ background: #f9fafb; }}
   </style>
 </head>
 <body>
   <h1>{html.escape(args.title)}</h1>
   <div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel_idx)}\">Home</a> &rsaquo; <span>Season</span></div>
   <table>
-    <tr><th>Player</th><th>Catches</th><th>Yards</th><th>Drops</th><th>TDs</th><th>Avg Score</th></tr>
-    {rows}
+    <thead><tr><th>Player</th><th>Catches</th><th>Yards</th><th>Drops</th><th>TDs</th><th>Avg Score</th></tr></thead>
+    <tbody>{rows}</tbody>
   </table>
 </body>
 </html>

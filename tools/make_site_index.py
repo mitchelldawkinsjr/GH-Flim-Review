@@ -67,15 +67,32 @@ def main():
   <title>Film Review Hub</title>
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
   <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; }}
-    h1 {{ margin-bottom: 10px; }}
+    :root {{
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --row: #ffffff;
+      --row-alt: #f9fafb;
+      --thead: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+      --border: #e5e7eb;
+    }}
+    body {{ font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }}
+    h1 {{ margin-bottom: 12px; font-weight: 700; letter-spacing: -0.01em; }}
     .section {{ margin-top: 24px; }}
-    table {{ border-collapse: collapse; width: 100%; }}
-    th, td {{ border: 1px solid #ccc; padding: 6px 8px; text-align: left; }}
-    th {{ background: #f5f5f5; }}
     .cards {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }}
-    .card {{ border: 1px solid #ddd; border-radius: 8px; padding: 12px; }}
-    .muted {{ color: #666; font-size: 12px; }}
+    .card {{ background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }}
+    .muted {{ color: var(--muted); font-size: 12px; }}
+    table {{ width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }}
+    thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; }}
+    tbody td {{ padding: 12px 14px; border-top: 1px solid var(--border); }}
+    tbody tr:nth-child(odd) {{ background: var(--row); }}
+    tbody tr:nth-child(even) {{ background: var(--row-alt); }}
+    tbody tr:hover {{ background: #eef2ff; }}
+    a {{ color: var(--primary); text-decoration: none; }}
+    a:hover {{ text-decoration: underline; }}
+    details summary {{ cursor: pointer; }}
   </style>
 </head>
 <body>
@@ -107,8 +124,8 @@ def main():
   <div class=\"section\">
     <h2>Weeks</h2>
     <table>
-      <tr><th>Week</th><th>Opponent</th><th>Weekly Dashboards</th><th>Summary</th><th>Group Film</th><th>CSVs</th></tr>
-      {''.join(weeks_rows)}
+      <thead><tr><th>Week</th><th>Opponent</th><th>Weekly Dashboards</th><th>Summary</th><th>Group Film</th><th>CSVs</th></tr></thead>
+      <tbody>{''.join(weeks_rows)}</tbody>
     </table>
   </div>
 
