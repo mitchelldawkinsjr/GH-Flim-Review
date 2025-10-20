@@ -1,0 +1,31 @@
+Player,Snap count,Targets,Drops,Catches,Rec Yards,Rushes,Rush Yards,Touchdowns,Missed Assignment,Loaf,Key play ++,Key play --,Notes
+Aiden,60,8,,5,58,4,23,,"99,115","69,70","19(R+7), 31(C+10,FD),37(R+9), 96(C+19), 111(R+7), 152(C+24,FD)","54(C-2), 69(L),70(L), 99(MA), 115(MA)","54(catch the ball first and catch it clean), 69(we have to play though pulling and holding, they cant stay in front of us so they will hold this is a loaf only becuase we know we fgotta fight through that and he was pulling that hard), 70(jogged off line touched no one) 80(trsut your speed get outside and up the sideline) 96(good catch nice job getting yards then getting out of bounds), 99(blown assignment here you gotta get this block left taj in a bad spot), 115(have to keep your base and balance here to hold the block or at least step in front to cut him off if you had helf this block its a Touchdown run), 152(great job tight rope on the sideline making poeple miss making a HUGE play in the clutch)"
+Zay,65,9,1,4,73,,,,"52, 111, 150","97,98","19(GB),36(C+42, FD),68(C+15, FD),81(C+9), 83(C+12,FD,S), 96(GB), 108(GB, P), 110(GB), 138(C+7)","97(L), 98(L), 111(MA), 150(DP,MA)","52(gotta hold your block loger), 83(Spectular catch way to hold onto the ball here.), 97(yes he is holding but we have to learn to fight through this contact and fight to get to the ball and fight hard enough that the ref has to call something), 98(close to a missed assigngment gotta get to the block here), 108(FIRST PANKCAKE!!!!!!!), 111(missed hte block and if you handle your job here its prob a Touchdown), 150(Gotta hold on to this pass), 158(tough ball looks like you missed judged the jump here potentially a catch with better timing)"
+Martise,62,4,,2,47,,,,"35,37, 56,149","32,34,84,136","23(GB,E), 46(C+3), 99(C+1), 110(E), 135(C+42,FD)","32(L),34(L),33(W),35(MA),37(MA), 56(MA), 84(L), 136(L),149(DP)","(generally a lot of taking plays off if you felt it wasnt coming to you NFS stuff) 37(Gotta be able to hold our blcok in this spot), 56(touched no one jogged of the line), 84)jogged off line and touched no one), 109(Got the PI call but i think we can come down with this ball, hits both hands.....), 135(good catch and great YAC), 136 (we have to fight through contact very rarely will they call it, this should be a TD), 149(This is a bad route due to the depth not being at 12 back to 10 for the curl also not running the route at full speed, looking for the ball to early)"
+Taj,13,3,1,1,,,,,52,,"51(C+15,FD), 84(GB, E)","52(MA), 67(DP, BR)","51(great play !YAC) 52(gotta hold your block longer), 67(rounded your route and fadded out of the break. gotta snap out of the break and get flat down the line, tough ball but i think its a catch if the route was cleaner), 84(NIce block and good effoet here bringing good energy)"
+Jakari,27,2,1,,,,,,,,,86(DP),"54(run your slant in front of the defense here), 86(bad drop no excuse here hit you in the hands/chest)"
+Chrisitan,,,,,,,,,,, ,,
+Braiden,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+Ju,61,,,,,,,,,,,,
+Res,64,6,1,4,51,,,2,,,,"57(C+5, TD) 149(C+30,TD)",
+Benard,7,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,Code,Name,Point Amount,,,,,,,,,,
+,(TD),Touchdown,10,,,,,,,,,,
+,(E),Effort i like,3,,,,,,,,,,
+,(ER),Elite route,5,,,,,,,,,,
+,(GR),good route,2,,,,,,,,,,
+,(C+n),Catch + n yards,1,,,,,,,,,,
+,(GB),Good block,2,,,,,,,,,,
+,(P),Pancake,5,,,,,,,,,,
+,(FD),First down,2,,,,,,,,,,
+,(R+N),Rush + N yards,1,,,,,, ,,,,
+,(MA),Missed Assignment,-5,,,,,,,,,,
+,(SC),Spectular catch,5,,,,,,,,,,
+,(DP),Dropped Pass,-3,,,,,,,,,,
+,(H),Holding,0,,,,,,,,,,
+,(BR),Bad Route,0,,,,,,,,,,
+,(L),Loaf Laziness,-1,,,,,,,,,,
+,(NFS),NOT FULL SPEED,-1,,,,,,,,,,
+,(W),Whiffed,-1,,,,,,,,,,

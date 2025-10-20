@@ -1,0 +1,313 @@
+#!/usr/bin/env python3
+import argparse
+from pathlib import Path
+import os
+import pandas as pd
+import html
+
+CODE_LABELS = {
+    'TD': 'Touchdown',
+    'E': 'Relentless Effort',
+    'ER': 'Elite Route',
+    'GR': 'Good Route',
+    'GB': 'Good Block',
+    'P': 'Pancake',
+    'FD': 'First Down',
+    'MA': 'Missed Assignment',
+    'SC': 'Spectacular Catch',
+    'DP': 'Dropped Pass',
+    'H': 'Holding',
+    'BR': 'Bad Route',
+    'L': 'Loaf (Laziness)',
+    'NFS': 'Not Full Speed',
+    'W': 'Whiffed',
+}
+
+
+def safe_div(n, d) -> float:
+    try:
+        n = float(n)
+        d = float(d)
+        if d == 0:
+            return 0.0
+        return n / d
+    except Exception:
+        return 0.0
+
+
+def per30(n, snaps) -> float:
+    try:
+        snaps = float(snaps)
+        n = float(n)
+        if snaps <= 0:
+            return 0.0
+        return n * 30.0 / snaps
+    except Exception:
+        return 0.0
+
+
+def letter(score: float) -> str:
+    if score >= 90: return "A"
+    if score >= 80: return "B"
+    if score >= 70: return "C"
+    if score >= 60: return "D"
+    return "F"
+
+
+def cell_text(val) -> str:
+    try:
+        if pd.isna(val):
+            return ''
+    except Exception:
+        pass
+    s = str(val)
+    return '' if s.lower() == 'nan' else s
+
+
+def collect_code_counts(df_sub: pd.DataFrame) -> dict:
+    counts = {}
+    for _, r in df_sub.iterrows():
+        for k, v in r.to_dict().items():
+            if isinstance(k, str) and k.startswith('cnt_'):
+                code = k.replace('cnt_', '').upper()
+                try:
+                    counts[code] = counts.get(code, 0) + int(v)
+                except Exception:
+                    pass
+    return counts
+
+
+def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, pdf_rel: str | None = None, breadcrumbs_html: str = "") -> str:
+    # Simple CSS for readability
+    css = """
+    body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; }
+    h1 { margin: 0 0 4px 0; }
+    h2 { margin-top: 24px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 14px; }
+    th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; vertical-align: top; }
+    th { background: #f5f5f5; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .small { color: #555; font-size: 12px; }
+    .breadcrumbs { font-size: 12px; color: #666; margin-bottom: 8px; }
+    .breadcrumbs a { color: #0070f3; text-decoration: none; }
+    .breadcrumbs a:hover { text-decoration: underline; }
+    """
+
+    metrics_rows = [
+        ("Grade", f"{rates['grade']} ({rates['score']:.1f})"),
+        ("Snaps", totals['snaps']),
+        ("Targets", totals['targets']),
+        ("Catches", totals['catches']),
+        ("Rec Yards", totals['rec_yards']),
+        ("Rush Yards", totals['rush_yards']),
+        ("Touchdowns", totals['touchdowns']),
+        ("Drops", totals['drops']),
+        ("Missed Assignments", totals['ma']),
+        ("Loafs", totals['loafs']),
+        ("Key Plays Points", f"{totals['code_points']:.1f}"),
+    ]
+
+    # Pretty labels and formatting (percentages where appropriate)
+    rate_rows = [
+        ("Catch Rate", f"{rates['catch_rate']*100:.1f}%"),
+        ("Yards per Target", f"{rates['ypt']:.2f}"),
+        ("Targets per 30", f"{rates['targets_per30']:.2f}"),
+        ("Key Plays per 30", f"{rates['keyplays_per30']:.2f}"),
+        ("TDs per 30", f"{rates['tds_per30']:.2f}"),
+        ("Drops Rate", f"{rates['drops_rate']*100:.1f}%"),
+        ("Missed Assignments per 30", f"{rates['ma_per30']:.2f}"),
+        ("Loafs per 30", f"{rates['loafs_per30']:.2f}"),
+    ]
+
+    codes_rows = sorted(code_counts.items(), key=lambda kv: kv[1], reverse=True)
+
+    def table(rows):
+        html_rows = ["<table>", "<tr><th>Metric</th><th>Value</th></tr>"]
+        for k, v in rows:
+            html_rows.append(f"<tr><td>{html.escape(str(k))}</td><td>{html.escape(str(v))}</td></tr>")
+        html_rows.append("</table>")
+        return "\n".join(html_rows)
+
+    codes_table_rows = []
+    codes_table_rows.append("<table><tr><th>Code</th><th>Meaning</th><th>Count</th></tr>")
+    for k, v in codes_rows:
+        meaning = CODE_LABELS.get(k, k)
+        codes_table_rows.append(
+            f"<tr><td>{html.escape(k)}</td><td>{html.escape(meaning)}</td><td>{v}</td></tr>"
+        )
+    codes_table_rows.append("</table>")
+    codes_table = "".join(codes_table_rows)
+
+    return f"""
+<!doctype html>
+<html>
+<head>
+  <meta charset=\"utf-8\" />
+  <title>{html.escape(title)} — {html.escape(player)}</title>
+  <style>{css}</style>
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  <link rel=\"icon\" href=\"data:,\" />
+  </head>
+<body>
+  <h1>{html.escape(player)}</h1>
+  {breadcrumbs_html}
+  <div class=\"small\">{html.escape(title)}</div>
+  <div class=\"grid\">
+    <div>
+      <h2>Totals</h2>
+      {table(metrics_rows)}
+    </div>
+    <div>
+      <h2>Rates (from totals)</h2>
+      {table(rate_rows)}
+    </div>
+  </div>
+  <h2>Code Counts</h2>
+  {codes_table}
+  {('<h2>Player PDF</h2><p><a href=\"' + html.escape(pdf_rel) + '\" target=\"_blank\">Open PDF</a></p><object data=\"' + html.escape(pdf_rel) + '\" type=\"application/pdf\" width=\"100%\" height=\"640px\"><p>PDF preview not available. <a href=\"' + html.escape(pdf_rel) + '\">Download</a></p></object>') if pdf_rel else ''}
+  <p class=\"small\">Generated by make_dashboard_html.py</p>
+</body>
+</html>
+"""
+
+
+def main():
+    ap = argparse.ArgumentParser(description='Generate per-player HTML dashboards from detailed CSV')
+    ap.add_argument('--details_csv', required=True)
+    ap.add_argument('--out_dir', required=True)
+    ap.add_argument('--title', default='Player Dashboards')
+    ap.add_argument('--pdfs_dir', help='Directory containing per-player PDFs')
+    ap.add_argument('--week', help='Week number for PDF filenames like Player_8.pdf')
+    args = ap.parse_args()
+
+    df = pd.read_csv(args.details_csv)
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    players = sorted([cell_text(p) for p in df['player'].astype(str).unique()])
+
+    index_items = []
+    for player in players:
+        if not player:
+            continue
+        sub = df[df['player'].astype(str) == player]
+        if sub.empty:
+            continue
+
+        def sum_int(col):
+            return int(pd.to_numeric(sub.get(col, 0), errors='coerce').fillna(0).sum())
+
+        snaps = sum_int('snaps')
+        targets = sum_int('targets')
+        catches = sum_int('catches')
+        rec_yards = sum_int('rec_yards')
+        rush_yards = sum_int('rush_yards')
+        touchdowns = sum_int('touchdowns')
+        drops = sum_int('drops')
+        ma = sum_int('missed_assignments')
+        loafs = sum_int('loafs')
+        code_points = float(pd.to_numeric(sub.get('code_points', 0.0), errors='coerce').fillna(0.0).sum())
+
+        catch_rate = safe_div(catches, targets)
+        ypt = safe_div((rec_yards + rush_yards), targets)
+        tds_per30 = per30(touchdowns, snaps)
+        keyplays_total = int(pd.to_numeric(sub.get('derived_keyplays', 0), errors='coerce').fillna(0).sum())
+        keyplays_per30 = per30(keyplays_total, snaps)
+        targets_per30 = per30(targets, snaps)
+        drops_rate = safe_div(drops, targets)
+        loafs_per30 = per30(loafs, snaps)
+        ma_per30 = per30(ma, snaps)
+
+        score = float(pd.to_numeric(sub.get('score', 0.0), errors='coerce').fillna(0.0).mean())
+        letter_grade = letter(score)
+
+        totals = {
+            'snaps': snaps,
+            'targets': targets,
+            'catches': catches,
+            'rec_yards': rec_yards,
+            'rush_yards': rush_yards,
+            'touchdowns': touchdowns,
+            'drops': drops,
+            'ma': ma,
+            'loafs': loafs,
+            'code_points': code_points,
+        }
+        rates = {
+            'catch_rate': catch_rate,
+            'ypt': ypt,
+            'targets_per30': targets_per30,
+            'keyplays_per30': keyplays_per30,
+            'tds_per30': tds_per30,
+            'drops_rate': drops_rate,
+            'ma_per30': ma_per30,
+            'loafs_per30': loafs_per30,
+            'score': score,
+            'grade': letter_grade,
+        }
+
+        codes = collect_code_counts(sub)
+
+        player_file = f"{player.strip().replace(' ', '_')}.html"
+        pdf_rel = None
+        if args.pdfs_dir and args.week:
+            pdf_name = f"{player.strip().replace(' ', '_')}_{str(args.week).strip()}.pdf"
+            pdf_path = Path(args.pdfs_dir) / pdf_name
+            try:
+                pdf_rel = os.path.relpath(pdf_path, out_dir)
+            except Exception:
+                pdf_rel = str(pdf_path)
+
+        # Breadcrumbs: Home > WkN > Dashboards > Player
+        root_index = Path(out_dir).parent.parent / 'index.html'  # out/index.html
+        week_index = Path(out_dir) / 'index.html'                # out/WkX/dashboards/index.html
+        home_rel = os.path.relpath(root_index, out_dir)
+        week_rel = os.path.relpath(week_index, out_dir)
+        breadcrumbs = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel)}\">Home</a> &rsaquo; <a href=\"{html.escape(week_rel)}\">Week</a> &rsaquo; <span>{html.escape(player)}</span></div>"
+
+        html_str = render_player_html(player, totals, rates, codes, args.title, pdf_rel, breadcrumbs)
+        (out_dir / player_file).write_text(html_str, encoding='utf-8')
+        index_items.append((player, player_file, score))
+
+    # Index page
+    index_items.sort(key=lambda t: t[2], reverse=True)
+    rows = "".join(f"<tr><td><a href=\"{html.escape(f)}\">{html.escape(p)}</a></td><td>{s:.1f}</td></tr>" for p, f, s in index_items)
+    # Breadcrumbs for weekly index: Home > Week
+    try:
+        home_rel_idx = os.path.relpath(Path(out_dir).parent.parent / 'index.html', out_dir)  # out/index.html
+    except Exception:
+        home_rel_idx = '../index.html'
+    index_html = f"""
+<!doctype html>
+<html>
+<head>
+  <meta charset=\"utf-8\" />
+  <title>{html.escape(args.title)}</title>
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; }}
+    table {{ border-collapse: collapse; width: 100%; }}
+    th, td {{ border: 1px solid #ccc; padding: 6px 8px; text-align: left; }}
+    th {{ background: #f5f5f5; }}
+    .breadcrumbs {{ font-size: 12px; color: #666; margin-bottom: 8px; }}
+    .breadcrumbs a {{ color: #0070f3; text-decoration: none; }}
+    .breadcrumbs a:hover {{ text-decoration: underline; }}
+  </style>
+</head>
+<body>
+  <h1>{html.escape(args.title)}</h1>
+  <div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel_idx)}\">Home</a> &rsaquo; <span>Week</span></div>
+  <table>
+    <tr><th>Player</th><th>Avg Score</th></tr>
+    {rows}
+  </table>
+</body>
+</html>
+"""
+    (out_dir / 'index.html').write_text(index_html, encoding='utf-8')
+    print(f"Wrote HTML dashboards to {out_dir}")
+
+
+if __name__ == '__main__':
+    main()
+
+
