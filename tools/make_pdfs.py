@@ -350,6 +350,134 @@ def summary_csv_to_pdf(csv_path: Path, pdf_path: Path, title="Wk Summary"):
         ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.whitesmoke, colors.lightyellow])
     ]))
     story.append(table)
+    story.append(Spacer(1, 0.15*inch))
+
+    # Add per-player mini-sections: This Week vs Season and Discipline Tax
+    try:
+        import glob as _glob
+        import re as _re
+        df_week = pd.read_csv(csv_path)
+        # Metrics to compare
+        metrics = [
+            'catch_rate','yards_per_target','targets_per30','keyplays_per30',
+            'tds_per30','drops_rate','ma_per30','loafs_per30'
+        ]
+
+        # Determine current week number from path (e.g., out/Wk8/...)
+        current_week = None
+        m = _re.search(r"Wk(\d+)", str(Path(csv_path).parent))
+        if m:
+            try:
+                current_week = int(m.group(1))
+            except Exception:
+                current_week = None
+
+        # Load all season summary files across weeks from out/Wk*/results_*_summary.csv
+        out_root = Path(csv_path).parents[1]  # .../out
+        season_paths = sorted(_glob.glob(str(out_root / 'Wk*' / 'results_*_summary.csv')))
+        season_frames = []
+        for p in season_paths:
+            try:
+                dfp = pd.read_csv(p)
+                # attach week from path
+                mw = _re.search(r"Wk(\d+)", p)
+                if mw:
+                    dfp['__week'] = int(float(mw.group(1)))
+                season_frames.append(dfp)
+            except Exception:
+                continue
+
+        season_means = {}
+        if season_frames:
+            df_season_all = pd.concat(season_frames, ignore_index=True)
+            # Optionally exclude current week from season average
+            if current_week is not None and '__week' in df_season_all.columns:
+                df_season_all = df_season_all[df_season_all['__week'] != current_week]
+            # Ensure numeric for metrics
+            for mcol in metrics:
+                if mcol in df_season_all.columns:
+                    df_season_all[mcol] = pd.to_numeric(df_season_all[mcol], errors='coerce')
+            season_means = df_season_all.groupby('player')[metrics].mean().fillna(0.0).to_dict('index')
+
+        def fmt_pct(x):
+            try:
+                return f"{float(x)*100:.1f}%"
+            except Exception:
+                return "-"
+        def fmt_num(x):
+            try:
+                return f"{float(x):.2f}"
+            except Exception:
+                return "-"
+
+        for _, r in df_week.iterrows():
+            player = str(r.get('player','')).strip()
+            if not player:
+                continue
+            # Weekly values
+            wk_vals = {}
+            for mcol in metrics:
+                try:
+                    wk_vals[mcol] = float(r.get(mcol, 0.0))
+                except Exception:
+                    wk_vals[mcol] = 0.0
+
+            # Season means; if missing, leave as None to show '-'
+            seas_vals = season_means.get(player, {}) if isinstance(season_means, dict) else {}
+
+            # Build rows with nice formatting
+            rows_vs = [["Metric","This Week","Season Avg","Δ"]]
+            for mcol in metrics:
+                wv = wk_vals.get(mcol, 0.0)
+                sv = seas_vals.get(mcol, None) if isinstance(seas_vals, dict) else None
+                dv = (wv - sv) if (sv is not None) else None
+                label = mcol.replace('_',' ')
+                if mcol in ("catch_rate","drops_rate"):
+                    tw = fmt_pct(wv)
+                    ts = fmt_pct(sv) if sv is not None else "-"
+                    td = (("+" if dv is not None and dv>=0 else "") + fmt_pct(dv)) if dv is not None else "-"
+                else:
+                    tw = fmt_num(wv)
+                    ts = fmt_num(sv) if sv is not None else "-"
+                    td = (("+" if dv is not None and dv>=0 else "") + fmt_num(dv)) if dv is not None else "-"
+                rows_vs.append([label, tw, ts, td])
+
+            story.append(Paragraph(f"{player} — This Week vs Season", styles['Heading3']))
+            tbl_vs = Table(rows_vs, hAlign='LEFT', colWidths=[2.4*inch, 1.2*inch, 1.2*inch, 0.9*inch])
+            tbl_vs.setStyle(TableStyle([
+                ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
+                ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('ALIGN', (1,1), (-1,-1), 'CENTER'),
+            ]))
+            story.append(tbl_vs)
+
+            # Discipline Tax
+            drops_rate = wk_vals.get('drops_rate', 0.0)
+            loafs_per30 = wk_vals.get('loafs_per30', 0.0)
+            ma_per30 = wk_vals.get('ma_per30', 0.0)
+            disc_tax = 12.0 * drops_rate + 4.0 * loafs_per30 + 9.0 * min(ma_per30, 1.0)
+            rows_tax = [
+                ["Component","Value"],
+                ["Drops Rate", fmt_pct(drops_rate)],
+                ["Loafs per 30", fmt_num(loafs_per30)],
+                ["Missed Assignments per 30", fmt_num(ma_per30)],
+                ["Discipline Tax (pts)", f"{disc_tax:.2f}"],
+            ]
+            tbl_tax = Table(rows_tax, hAlign='LEFT', colWidths=[2.8*inch, 2.8*inch])
+            tbl_tax.setStyle(TableStyle([
+                ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
+                ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('ALIGN', (1,1), (-1,-1), 'LEFT'),
+            ]))
+            story.append(Spacer(1, 0.08*inch))
+            story.append(Paragraph('Discipline Tax', styles['Heading4']))
+            story.append(tbl_tax)
+            story.append(Spacer(1, 0.2*inch))
+    except Exception:
+        # If anything goes wrong, keep original summary PDF intact
+        pass
     doc.build(story)
 
 
