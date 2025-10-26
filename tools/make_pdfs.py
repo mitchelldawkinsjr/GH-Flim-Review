@@ -560,7 +560,7 @@ def main():
                                 elif m_bt:
                                     n = int(m_bt.group('n'))
                                     label = f"Broken Tackle(s) {'+' if n>=0 else ''}{n}"
-                                    points = 0.5 * n
+                                    points = 1.0 * n
                                 else:
                                     code = tok.upper()
                                     label = CODE_LABELS.get(code, code)

@@ -144,7 +144,7 @@ def parse_codes_to_points(codes_str):
         m_bt = PATTERN_BT_YARDS.match(t)
         if m_bt:
             n = int(m_bt.group('n'))
-            total += 0.5 * n
+            total += 1.0 * n
             yards_bt += n
             # count BT occurrence for code counts table
             try:
