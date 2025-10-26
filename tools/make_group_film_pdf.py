@@ -26,6 +26,7 @@ CODE_LABELS = {
     'L': 'Loaf (Laziness)',
     'NFS': 'Not Full Speed',
     'W': 'Whiffed',
+    'BT': 'Broken Tackle',
 }
 
 
@@ -45,10 +46,15 @@ def expand_codes_in_text(text: str) -> str:
         n = m.group('n')
         sign = '+' if not n.startswith('-') else ''
         return f"Rush {sign}{n} yards"
+    def _repl_bt(m):
+        n = m.group('n')
+        sign = '+' if not n.startswith('-') else ''
+        return f"Broken Tackle {sign}{n} yards"
     text = re.sub(r'(?<![A-Za-z0-9])C\+(?P<n>-?\d+)(?![A-Za-z0-9])', _repl_c, text, flags=re.IGNORECASE)
     text = re.sub(r'(?<![A-Za-z0-9])C-(?P<n>\d+)(?![A-Za-z0-9])', lambda m: f"Catch -{m.group('n')} yards", text, flags=re.IGNORECASE)
     text = re.sub(r'(?<![A-Za-z0-9])R\+(?P<n>-?\d+)(?![A-Za-z0-9])', _repl_r, text, flags=re.IGNORECASE)
     text = re.sub(r'(?<![A-Za-z0-9])R-(?P<n>\d+)(?![A-Za-z0-9])', lambda m: f"Rush -{m.group('n')} yards", text, flags=re.IGNORECASE)
+    text = re.sub(r'(?<![A-Za-z0-9])BT\+(?P<n>-?\d+)(?![A-Za-z0-9])', _repl_bt, text, flags=re.IGNORECASE)
     return text
 
 

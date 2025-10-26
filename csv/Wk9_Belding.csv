@@ -1,0 +1,29 @@
+Player,Snap count,Targets,Drops,Catches,Rec Yards,Rushes,Rush Yards,Touchdowns,Missed Assignment,Loaf,Key play ++,Key play --,Show in flim,Notes
+Aiden,26,1,,1,5,,,,,,"12(GB), 19(C+5),33(GB),35(GB, E),88(GB)",,,"19(gotta make sure to cut back tot he outside after the catch here otherswise nice job), 21 (your blocked opened up the TD), 35(GREAT BLOCK. won the fight and opned up the lane for the TD), 79(why didnt you cut back here ?)"
+Zay,25,2,,1,11,,,,4,,"21(P),33(GB),65(GB),89(C+11), 90(GB)","14(MA,W), 16(MA),47(MA),67(MA)","14,16, 21, 47","14(made light contact but allowed the corner to muck up the play, he wasnt evben good enough to make the tackle no way we loss this block, loss the rep),16(corner beats you to the block point and washing the run back inside, missed block and lost rep), 47(you were beat at the snap got come off the lline with some more intent here to force the db to at least respect you OR fight at the snap to get inside leverage, he got in on the tackle lost the rep), 66(started with a good block once the corner pulled you he got position you kept blocking so respect but losing the position is when the rep was lost) 67(lost position at the snap), 93(how did er end up falling here? by the time the ball got to you its a 50/50 1v1 jump ball, if you time your jump here this is a TD) "
+Martise,26,3,,3,12,,,,2,1,"35(E), 45(C+5, BT+1)), 65(GB), 88(GB), 90(C+4),129(C+3)","12(MA),35(H),47(MA),67(L)","12,47,81, 129","12(didnt bring your feet with the block and ending up loasing the rep ), 14(make sure to run your motion at full speed have to amke the moition look the same every time), 15(make sure to sell the bubble and be a threat here, close to loafing), 34(have to due better here to not get caught up so long on the reroute), 35(very close to holding but this is the type of effort i wanna see in blocking opened up the TD!), 45( lets make sure our motion here is full speed motion and you must do a better job of putting the ball away TUCK TUCK TUCK 3 points of contact), 47(you got to the right spot but when you made contact you allowed him to control you then toss you to the side, you must bring more power to the block point and be resdy to fight, lost the rep), 67(touched no one no effort to block or find work), 81(on scramble you are the fuerther out here you gotta turn back at a 45 degree angle toward the qb), 90(Put the ball away TUCK), 129(Awareness is important here if you fought for 1 more yard we get the first down)"
+Taj,19,5,1,3,96,,,1,1,1,"13(C+17, FD, BT+3), 34(C+58), 35(P), 68(C+21,TD)","12(L),18(L), 66(MA)",18,"12(you got blown back on contact gotta be ready to make this block, giving loaf due to not using techinque. had Ju been running free this would be an MA), 13( great catch way to make ppl miss and get up field big gain),18(touched no one on the block here and looking back at the start of the rep), 34 (nice job using scramble rules here tofor a BIG gain), 35(nice block down the field, pancake!!!), 44(slpit is to wide pre play ends up putting you and aiden in the same spot at the top of the route), 66( you started out blocking the right person but quickly lost that block) 83(almost spectualr catch here great effort ) "
+Jakari,2,,,,,,,,,,,,,
+Chrisitan,1,,,,,,,,,,,,,
+Braiden,3,,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+,Code,Name,Point Amount,,,,,,,,,Group Notes,Show in flim,
+,(TD),Touchdown,15,,,,,,,,,"13(after the ball is caught we did a solid job of finding work down the field blocking), 35(the unit is dominate blocking), 115(blown scheme completely)","13, 35, 115",
+,(E),Relentless Effort,5,,,,,,,,,,,
+,(ER),Elite route,7,,,,,,,,,,,
+,(GR),Good route,2,,,,,,,,,,,
+,(C+n),Catch + n yards,0.5,,,,,,,,,,,
+,(GB),Good block,2,,,,,,,,,,,
+,(P),Pancake,10,,,,,,,,,,,
+,(FD),First down,5,,,,,,,,,,,
+,(R+N),Rush + N yards,0.5,,,,,, ,,,,,
+,(MA),Missed Assignment,-10,,,,,,,,,,,
+,(SC),Spectular catch,10,,,,,,,,,,,
+,(DP),Dropped Pass,-15,,,,,,,,,,,
+,(H),Holding,0,,,,,,,,,,,
+,(BR),Bad Route,-2,,,,,,,,,,,
+,(L),Loaf Laziness,-2,,,,,,,,,,,
+,(NFS),NOT FULL SPEED,-3,,,,,,,,,,,
+,(W),Whiffed,-1,,,,,,,,,,,
+,(BT+n),Broken Tackle + n ,0.5,,,,,,,,,,,

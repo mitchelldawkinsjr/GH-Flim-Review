@@ -59,6 +59,7 @@ POSITIVE_CODES_FOR_KEYPLAYS = {"TD","SC","ER","GR","GB","P","FD","E"}
 # Patterns for variable-valued codes
 PATTERN_CATCH_YARDS = re.compile(r'^(?:\(?\s*)?C\+(?P<n>-?\d+)(?:\s*\)?)?$', flags=re.IGNORECASE)
 PATTERN_RUSH_YARDS = re.compile(r'^(?:\(?\s*)?R\+(?P<n>-?\d+)(?:\s*\)?)?$', flags=re.IGNORECASE)
+PATTERN_BT_YARDS = re.compile(r'^(?:\(?\s*)?BT\+(?P<n>-?\d+)(?:\s*\)?)?$', flags=re.IGNORECASE)
 
 def normalize_cols(df):
     def norm(c):
@@ -119,6 +120,7 @@ def parse_codes_to_points(codes_str):
     counts = {k: 0 for k in LEGEND_POINTS.keys()}
     yards_c = 0
     yards_r = 0
+    yards_bt = 0
     derived_keyplays = 0
 
     if not isinstance(codes_str, str) or not codes_str.strip():
@@ -138,6 +140,17 @@ def parse_codes_to_points(codes_str):
             n = int(m_r.group('n'))
             total += 0.5 * n
             yards_r += n
+            continue
+        m_bt = PATTERN_BT_YARDS.match(t)
+        if m_bt:
+            n = int(m_bt.group('n'))
+            total += 0.5 * n
+            yards_bt += n
+            # count BT occurrence for code counts table
+            try:
+                counts['BT'] = counts.get('BT', 0) + 1
+            except Exception:
+                counts['BT'] = 1
             continue
 
         t_up = t.upper()

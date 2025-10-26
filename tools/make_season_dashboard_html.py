@@ -22,6 +22,7 @@ CODE_LABELS = {
     'L': 'Loaf (Laziness)',
     'NFS': 'Not Full Speed',
     'W': 'Whiffed',
+    'BT': 'Broken Tackle',
 }
 
 
