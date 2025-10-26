@@ -149,6 +149,15 @@ def main():
     ], check=True)
     print(f"  Dashboards HTML: {dashboards_html_dir}/index.html")
 
+    # Weekly Snapshot HTML (spreadsheet-like table)
+    snapshot_html = out_dir / 'snapshot.html'
+    subprocess.run([
+        python_bin, str(project_root / 'tools' / 'make_snapshot_html.py'),
+        '--details_csv', str(results_csv),
+        '--prepared_csv', str(prepared_csv),
+        '--out', str(snapshot_html)
+    ], check=True)
+
     # Season dashboards (aggregate across out/Wk*/results_*.csv)
     season_dir = project_root / 'out' / 'Season' / 'dashboards'
     season_dir.parent.mkdir(parents=True, exist_ok=True)

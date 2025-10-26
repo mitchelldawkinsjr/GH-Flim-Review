@@ -50,12 +50,13 @@ def main():
                 if m:
                     opponent = m.group(1)
         csv_links = ' '.join(f"<a href=\"{html.escape(rel(Path(c)))}\">{html.escape(Path(c).name)}</a>" for c in csvs)
+        snapshot = wd / 'snapshot.html'
         weeks_rows.append(
             f"<tr><td>{html.escape(week_name)}</td><td>{html.escape(opponent) if opponent else '-'}</td>"
             f"<td><a href=\"{html.escape(rel(dashboards))}\">Dashboards</a></td>"
             f"<td><a href=\"{html.escape(rel(summary_pdf))}\">Summary PDF</a></td>"
             f"<td><a href=\"{html.escape(rel(group_pdf))}\">Group Film PDF</a></td>"
-            f"<td>{csv_links}</td>"
+            f"<td>{csv_links}<br/>{('<a href=\"' + html.escape(rel(snapshot)) + '\">Snapshot</a>') if snapshot.exists() else ''}</td>"
             f"</tr>"
         )
 
@@ -124,7 +125,7 @@ def main():
   <div class=\"section\">
     <h2>Weeks</h2>
     <table>
-      <thead><tr><th>Week</th><th>Opponent</th><th>Weekly Dashboards</th><th>Summary</th><th>Group Film</th><th>CSVs</th></tr></thead>
+      <thead><tr><th>Week</th><th>Opponent</th><th>Weekly Dashboards</th><th>Summary</th><th>Group Film</th><th>CSVs / Snapshot</th></tr></thead>
       <tbody>{''.join(weeks_rows)}</tbody>
     </table>
   </div>
