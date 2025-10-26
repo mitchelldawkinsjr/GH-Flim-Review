@@ -228,7 +228,7 @@ def compute_row(r):
     neg = (
         12.0 * drops_rate +
         4.0  * loafs_per30 +
-        9.0  * min(ma_per30, 1.0)
+        9.0  * ma_per30
     )
 
     score = clamp(base + pos - neg, 0.0, 100.0)

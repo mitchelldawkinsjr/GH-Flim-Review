@@ -462,7 +462,7 @@ def summary_csv_to_pdf(csv_path: Path, pdf_path: Path, title="Wk Summary"):
             drops_rate = wk_vals.get('drops_rate', 0.0)
             loafs_per30 = wk_vals.get('loafs_per30', 0.0)
             ma_per30 = wk_vals.get('ma_per30', 0.0)
-            disc_tax = 12.0 * drops_rate + 4.0 * loafs_per30 + 9.0 * min(ma_per30, 1.0)
+            disc_tax = 12.0 * drops_rate + 4.0 * loafs_per30 + 9.0 * ma_per30
             rows_tax = [
                 ["Component","Value"],
                 ["Drops Rate", fmt_pct(drops_rate)],
