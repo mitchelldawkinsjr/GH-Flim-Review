@@ -131,7 +131,7 @@ def main():
   </div>
 
   <div class="section" style="margin-top:18px">
-    <details open>
+    <details>
       <summary><b>How to score well</b></summary>
       <ul>
         <li><b>Relentless effort every rep</b>: finish full speed, strain on blocks (earn Relentless Effort, avoid Loaf/Not Full Speed).</li>
@@ -142,6 +142,7 @@ def main():
         <li><b>Dominate run game</b>: position + hand fit + run feet (Good Block +2, Pancake +10).</li>
         <li><b>Finish drives</b>: Touchdowns are +15; red-zone detail matters.</li>
       </ul>
+      <div class="muted">Key Play Points Rubric: Touchdown +15, Relentless Effort +5, Elite Route +7, Good Route +2, Catch/Rush yardage +0.5/yd, Broken Tackle yardage +1.0/yd, Good Block +2, Pancake +10, First Down +5, Spectacular Catch +10; Missed Assignment -10, Dropped Pass -15, Bad Route -2, Loaf (Laziness) -2, Not Full Speed -3, Whiffed -1, Holding 0.</div>
     </details>
   </div>
   <div class="section">
