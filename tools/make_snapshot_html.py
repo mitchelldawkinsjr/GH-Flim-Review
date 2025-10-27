@@ -193,10 +193,10 @@ def main():
     ga_id = os.environ.get('GA_MEASUREMENT_ID', '').strip()
     ga_snippet = ''
     if ga_id:
-        ga_snippet = f"""
+        ga_snippet = ("""
 <script>
 (function(){
-  var GA_ID = '{ga_id}';
+  var GA_ID = '%s';
   if (navigator.doNotTrack == '1' || window.doNotTrack == '1') return;
   var s=document.createElement('script'); s.async=1;
   s.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;
@@ -206,7 +206,7 @@ def main():
   gtag('js', new Date()); gtag('config', GA_ID, { anonymize_ip: true });
 })();
 </script>
-        """
+        """ % ga_id)
     html = build_snapshot_html(rows, ga_snippet)
 
     # Default out path: ../snapshot.html relative to details CSV dir
