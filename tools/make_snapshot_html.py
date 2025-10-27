@@ -158,7 +158,7 @@ def main():
 
     for player, g in df.groupby('player'):
         p = str(player).strip()
-        if not p:
+        if not p or p.lower() in ('nan', 'none'):
             continue
         snaps = int(pd.to_numeric(g.get('snaps', 0), errors='coerce').fillna(0).sum())
         targets = int(pd.to_numeric(g.get('targets', 0), errors='coerce').fillna(0).sum())
