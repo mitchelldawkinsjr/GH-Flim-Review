@@ -23,13 +23,12 @@ def safe_int(x) -> int:
 def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
     css = (
         '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">\n'
-        '<style type="text/css">.ritz .waffle a { color: inherit; }.ritz .waffle .s2{background-color:#ffffff;text-align:right;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s4{background-color:#ebeff1;text-align:right;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s7{background-color:#ffffff;text-align:left;color:#000000;font-family:Arial;font-size:10pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s6{background-color:#fff2cc;text-align:left;font-weight:bold;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s5{background-color:#ebeff1;text-align:left;font-weight:bold;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s0{background-color:#fff2cc;text-align:center;font-weight:bold;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s1{background-color:#ffffff;text-align:left;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s3{background-color:#ebeff1;text-align:left;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}</style>'
+        '<style type="text/css">.ritz .waffle a { color: inherit; }.ritz .waffle .s2{background-color:#ffffff;text-align:right;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s4{background-color:#ebeff1;text-align:right;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s7{background-color:#ffffff;text-align:left;color:#000000;font-family:Arial;font-size:10pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s6{background-color:#fff2cc;text-align:left;font-weight:bold;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s5{background-color:#ebeff1;text-align:left;font-weight:bold;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s0{background-color:#fff2cc;text-align:center;font-weight:bold;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s1{background-color:#ffffff;text-align:left;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s3{background-color:#ebeff1;text-align:left;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle, .ritz .waffle td, .ritz .waffle th { border: 1px solid #333; border-collapse: collapse; }</style>'
     )
 
     # Header row
     header = (
         '<tr style="height: 19px">'
-        '<th class="row-headers-background"><div class="row-header-wrapper" style="line-height: 19px">1</div></th>'
         '<td class="s0">Player</td>'
         '<td class="s0">Snap count</td>'
         '<td class="s0">Drops</td>'
@@ -56,17 +55,16 @@ def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
         zebra += 1
         lcls = 's1' if zebra % 2 == 1 else 's3'
         rcls = 's2' if zebra % 2 == 1 else 's4'
-        drops_cell = '' if r['drops'] == 0 else str(r['drops'])
-        ma_cell = '' if r['missed_assignments'] == 0 else str(r['missed_assignments'])
-        loaf_cell = '' if r['loafs'] == 0 else str(r['loafs'])
-        rushes_cell = '' if r.get('rushes', 0) == 0 else str(r.get('rushes', 0))
+        drops_cell = str(r['drops'])
+        ma_cell = str(r['missed_assignments'])
+        loaf_cell = str(r['loafs'])
+        rushes_cell = str(r.get('rushes', 0))
         key_points_cell = f"{r['key_points']:.1f}" if isinstance(r['key_points'], float) else str(r['key_points'])
         grade_cell = str(int(round(float(r['score']))))
         total_loafs += safe_int(r['loafs'])
         scores.append(float(r['score']))
         body_parts.append(
             '<tr style="height: 19px">'
-            f'<th class="row-headers-background"><div class="row-header-wrapper" style="line-height: 19px">{zebra+1}</div></th>'
             f'<td class="{lcls}">{r["player"]}</td>'
             f'<td class="{rcls}">{r["snaps"]}</td>'
             f'<td class="{lcls}">{drops_cell}</td>'
@@ -89,25 +87,21 @@ def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
 
     footer = (
         '<tr style="height: 19px">'
-        '<th class="row-headers-background"><div class="row-header-wrapper" style="line-height: 19px">10</div></th>'
         '<td class="s6" dir="ltr">Total Loafs</td>'
         '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'
         '<td></td><td></td><td></td><td></td><td></td>'
         '</tr>'
         '<tr style="height: 19px">'
-        '<th class="row-headers-background"><div class="row-header-wrapper" style="line-height: 19px">11</div></th>'
         f'<td class="s2" dir="ltr">{total_loafs}</td>'
         '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'
         '<td></td><td></td><td></td><td></td><td></td>'
         '</tr>'
         '<tr style="height: 19px">'
-        '<th class="row-headers-background"><div class="row-header-wrapper" style="line-height: 19px">12</div></th>'
         '<td class="s6" dir="ltr">Unit Grade</td>'
         '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'
         '<td class="s7" dir="ltr"></td><td></td><td></td><td></td><td></td>'
         '</tr>'
         '<tr style="height: 19px">'
-        '<th class="row-headers-background"><div class="row-header-wrapper" style="line-height: 19px">13</div></th>'
         f'<td class="s2" dir="ltr">{int(round(unit_score))}</td>'
         f'<td class="s1" dir="ltr">{unit_grade}</td>'
         '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'
@@ -115,12 +109,7 @@ def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
         '</tr>'
     )
 
-    html = [css, ga_snippet, '<div class="ritz grid-container" dir="ltr">', '<table class="waffle" cellspacing="0" cellpadding="0">', '<thead>']
-    # Column headers (A..N) widths are cosmetic; omit for brevity
-    html.append('<tr><th class="row-header freezebar-vertical-handle"></th>' + ''.join(
-        f'<th class="column-headers-background">{c}</th>' for c in list('ABCDEFGHIJKLMN')
-    ) + '</tr>')
-    html.append('</thead><tbody>')
+    html = [css, ga_snippet, '<div class="ritz grid-container" dir="ltr">', '<table class="waffle" cellspacing="0" cellpadding="0">', '<thead></thead><tbody>']
     html.append(header)
     html.extend(body_parts)
     html.append(footer)
