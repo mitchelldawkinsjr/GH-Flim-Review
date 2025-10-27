@@ -2,6 +2,7 @@
 import argparse
 from pathlib import Path
 import pandas as pd
+import os
 
 
 def letter(score: float) -> str:
@@ -19,7 +20,7 @@ def safe_int(x) -> int:
         return 0
 
 
-def build_snapshot_html(rows: list[dict]) -> str:
+def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
     css = (
         '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">\n'
         '<style type="text/css">.ritz .waffle a { color: inherit; }.ritz .waffle .s2{background-color:#ffffff;text-align:right;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s4{background-color:#ebeff1;text-align:right;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s7{background-color:#ffffff;text-align:left;color:#000000;font-family:Arial;font-size:10pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s6{background-color:#fff2cc;text-align:left;font-weight:bold;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s5{background-color:#ebeff1;text-align:left;font-weight:bold;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s0{background-color:#fff2cc;text-align:center;font-weight:bold;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s1{background-color:#ffffff;text-align:left;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}.ritz .waffle .s3{background-color:#ebeff1;text-align:left;color:#000000;font-family:Arial;font-size:11pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:0px 3px 0px 3px;}</style>'
@@ -114,7 +115,7 @@ def build_snapshot_html(rows: list[dict]) -> str:
         '</tr>'
     )
 
-    html = [css, '<div class="ritz grid-container" dir="ltr">', '<table class="waffle" cellspacing="0" cellpadding="0">', '<thead>']
+    html = [css, ga_snippet, '<div class="ritz grid-container" dir="ltr">', '<table class="waffle" cellspacing="0" cellpadding="0">', '<thead>']
     # Column headers (A..N) widths are cosmetic; omit for brevity
     html.append('<tr><th class="row-header freezebar-vertical-handle"></th>' + ''.join(
         f'<th class="column-headers-background">{c}</th>' for c in list('ABCDEFGHIJKLMN')
@@ -189,7 +190,24 @@ def main():
     # Sort by score desc
     rows.sort(key=lambda r: r['score'], reverse=True)
 
-    html = build_snapshot_html(rows)
+    ga_id = os.environ.get('GA_MEASUREMENT_ID', '').strip()
+    ga_snippet = ''
+    if ga_id:
+        ga_snippet = f"""
+<script>
+(function(){
+  var GA_ID = '{ga_id}';
+  if (navigator.doNotTrack == '1' || window.doNotTrack == '1') return;
+  var s=document.createElement('script'); s.async=1;
+  s.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;
+  document.head.appendChild(s);
+  window.dataLayer=window.dataLayer||[];
+  function gtag(){dataLayer.push(arguments);} window.gtag=gtag;
+  gtag('js', new Date()); gtag('config', GA_ID, { anonymize_ip: true });
+})();
+</script>
+        """
+    html = build_snapshot_html(rows, ga_snippet)
 
     # Default out path: ../snapshot.html relative to details CSV dir
     out_path = Path(args.out) if args.out else (Path(args.details_csv).parent.parent / 'snapshot.html')

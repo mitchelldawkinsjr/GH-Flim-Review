@@ -4,6 +4,7 @@ from pathlib import Path
 import glob
 import html
 import re
+import os
 
 
 def main():
@@ -25,6 +26,27 @@ def main():
             return str(p.relative_to(out_root))
         except Exception:
             return str(p)
+
+    # GA from env
+    ga_id = os.environ.get('GA_MEASUREMENT_ID', '').strip()
+    ga_snippet = ''
+    if ga_id:
+        ga_snippet = f"""
+  <script>
+  (function(){{
+    var GA_ID = '{html.escape(ga_id)}';
+    if (navigator.doNotTrack == '1' || window.doNotTrack == '1') return;
+    var s=document.createElement('script'); s.async=1;
+    s.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;
+    document.head.appendChild(s);
+    window.dataLayer=window.dataLayer||[];
+    function gtag(){{dataLayer.push(arguments);}}
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', GA_ID, {{ anonymize_ip: true }});
+  }})();
+  </script>
+        """
 
     weeks_rows = []
     for wd in week_dirs:
@@ -49,14 +71,14 @@ def main():
                 m = re.search(r'Wk\d+_(.+)_prepared$', stem)
                 if m:
                     opponent = m.group(1)
-        csv_links = ' '.join(f"<a href=\"{html.escape(rel(Path(c)))}\">{html.escape(Path(c).name)}</a>" for c in csvs)
+        csv_links = ' '.join(f"<a href=\"{html.escape(rel(Path(c)))}\" onclick=\"if(window.gtag){{gtag('event','open_csv',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">{html.escape(Path(c).name)}</a>" for c in csvs)
         snapshot = wd / 'snapshot.html'
         weeks_rows.append(
             f"<tr><td>{html.escape(week_name)}</td><td>{html.escape(opponent) if opponent else '-'}</td>"
-            f"<td><a href=\"{html.escape(rel(dashboards))}\">Dashboards</a></td>"
-            f"<td><a href=\"{html.escape(rel(summary_pdf))}\">Summary PDF</a></td>"
-            f"<td><a href=\"{html.escape(rel(group_pdf))}\">Group Film PDF</a></td>"
-            f"<td>{csv_links}<br/>{('<a href=\"' + html.escape(rel(snapshot)) + '\">Snapshot</a>') if snapshot.exists() else ''}</td>"
+            f"<td><a href=\"{html.escape(rel(dashboards))}\" onclick=\"if(window.gtag){{gtag('event','open_week_dash',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">Dashboards</a></td>"
+            f"<td><a href=\"{html.escape(rel(summary_pdf))}\" onclick=\"if(window.gtag){{gtag('event','open_summary_pdf',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">Summary PDF</a></td>"
+            f"<td><a href=\"{html.escape(rel(group_pdf))}\" onclick=\"if(window.gtag){{gtag('event','open_group_pdf',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">Group Film PDF</a></td>"
+            f"<td>{csv_links}<br/>{('<a href=\"' + html.escape(rel(snapshot)) + '\" onclick=\"if(window.gtag){gtag(\'event\', \'open_snapshot\', {event_category: \'navigation\', week: \'%s\'});}\">Snapshot</a>' % html.escape(week_name)) if snapshot.exists() else ''}</td>"
             f"</tr>"
         )
 
@@ -67,6 +89,7 @@ def main():
   <meta charset=\"utf-8\" />
   <title>Film Review Hub</title>
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  {ga_snippet}
   <style>
     :root {{
       --bg: #f5f7fb;
@@ -103,7 +126,7 @@ def main():
     <div class=\"card\">
       <div><b>Season Dashboards</b></div>
       <div class=\"muted\">Totals & rates per player</div>
-      <div style=\"margin-top:8px\"><a href=\"{html.escape(rel(season_index))}\">Open</a></div>
+      <div style=\"margin-top:8px\"><a href=\"{html.escape(rel(season_index))}\" onclick=\"if(window.gtag){{gtag('event','open_season_dash',{{event_category:'navigation'}});}}\">Open</a></div>
     </div>
   </div>
 
@@ -115,14 +138,13 @@ def main():
         <li><b>Master your assignment</b>: split, depth, route landmark, adjust vs coverage (avoid Missed Assignment).</li>
         <li><b>Elite, crisp routes</b>: full depth, explode out, hold leverage (earn Elite Route/Good Route, avoid Bad Route).</li>
         <li><b>Win the ball</b>: eyes-to-tuck, high-point, squeeze through contact (earn Spectacular Catch, avoid Dropped Pass).</li>
-        <li><b>Add yards and chains</b>: fight through contact; Catch/Rush yardage = +0.5 per yard; First Downs +5.</li>
+        <li><b>Add yards and chains</b>: fight through contact; Catch/Rush yardage = +0.5 per yard; Broken Tackle yardage = +1.0 per yard; First Downs +5.</li>
         <li><b>Dominate run game</b>: position + hand fit + run feet (Good Block +2, Pancake +10).</li>
         <li><b>Finish drives</b>: Touchdowns are +15; red-zone detail matters.</li>
       </ul>
-      <div class="muted">Key Play Points Rubric: Touchdown +15, Relentless Effort +5, Elite Route +7, Good Route +2, Catch/Rush yardage +0.5/yd, Broken Tackle yardage +1.0/yd, Good Block +2, Pancake +10, First Down +5, Spectacular Catch +10; Missed Assignment -10, Dropped Pass -15, Bad Route -2, Loaf (Laziness) -2, Not Full Speed -3, Whiffed -1, Holding 0.</div>
     </details>
   </div>
-  <div class=\"section\">
+  <div class="section">
     <h2>Weeks</h2>
     <table>
       <thead><tr><th>Week</th><th>Opponent</th><th>Weekly Dashboards</th><th>Summary</th><th>Group Film</th><th>CSVs / Snapshot</th></tr></thead>
@@ -130,7 +152,7 @@ def main():
     </table>
   </div>
 
-  <p class=\"muted\">Generated by make_site_index.py</p>
+  <p class="muted">Generated by make_site_index.py</p>
 </body>
 </html>
 """

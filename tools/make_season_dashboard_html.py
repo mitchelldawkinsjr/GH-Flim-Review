@@ -79,7 +79,7 @@ def collect_code_counts(df_sub: pd.DataFrame) -> dict:
     return counts
 
 
-def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, breadcrumbs_html: str = "", weekly_links_html: str = "") -> str:
+def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, breadcrumbs_html: str = "", weekly_links_html: str = "", ga_snippet: str = "") -> str:
     css = """
     :root {
       --bg: #f5f7fb;
@@ -162,6 +162,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
 <head>
   <meta charset=\"utf-8\" />
   <title>{html.escape(title)} — {html.escape(player)}</title>
+  {ga_snippet}
   <style>{css}</style>
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
   <link rel=\"icon\" href=\"data:,\" />
@@ -186,6 +187,25 @@ def main():
     ap.add_argument('--out_dir', required=True)
     ap.add_argument('--title', default='Season Player Dashboards')
     args = ap.parse_args()
+    ga_id = os.environ.get('GA_MEASUREMENT_ID', '').strip()
+    ga_snippet = ''
+    if ga_id:
+        ga_snippet = f"""
+  <script>
+  (function(){{
+    var GA_ID = '{html.escape(ga_id)}';
+    if (navigator.doNotTrack == '1' || window.doNotTrack == '1') return;
+    var s=document.createElement('script'); s.async=1;
+    s.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;
+    document.head.appendChild(s);
+    window.dataLayer=window.dataLayer||[];
+    function gtag(){{dataLayer.push(arguments);}}
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', GA_ID, {{ anonymize_ip: true }});
+  }})();
+  </script>
+        """
 
     csv_paths = sorted(glob.glob(args.weekly_glob))
     if not csv_paths:
@@ -345,7 +365,7 @@ def main():
                 weekly_rows.append(f"<tr><td>Wk{w_int}</td><td><a href=\"{html.escape(dash_rel)}\">Dashboards</a></td><td>{pdf_cell}</td></tr>")
         weekly_links_html = "<table><tr><th>Week</th><th>Dashboards</th><th>PDF</th></tr>" + ''.join(weekly_rows) + "</table>" if weekly_rows else ''
 
-        html_str = render_player_html(player, totals, rates, codes, args.title, breadcrumbs, weekly_links_html)
+        html_str = render_player_html(player, totals, rates, codes, args.title, breadcrumbs, weekly_links_html, ga_snippet)
         (out_dir / player_file).write_text(html_str, encoding='utf-8')
         total_yards = rec_yards + rush_yards
         index_items.append((player, player_file, score, catches, total_yards, drops, touchdowns))
@@ -374,6 +394,7 @@ def main():
 <head>
   <meta charset=\"utf-8\" />
   <title>{html.escape(args.title)}</title>
+  {ga_snippet}
   <style>
     :root {{
       --bg: #f5f7fb;
