@@ -72,13 +72,16 @@ def main():
                 if m:
                     opponent = m.group(1)
         csv_links = ' '.join(f"<a href=\"{html.escape(rel(Path(c)))}\" onclick=\"if(window.gtag){{gtag('event','open_csv',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">{html.escape(Path(c).name)}</a>" for c in csvs)
-        snapshot = wd / 'snapshot.html'
+        # Snapshot link: always render (file exists for generated weeks)
+        snapshot_rel = rel(wd / 'snapshot.html')
+        snapshot_link = f"<a href=\"{html.escape(snapshot_rel)}\" onclick=\"if(window.gtag){{gtag('event','open_snapshot',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">Snapshot</a>"
         weeks_rows.append(
             f"<tr><td>{html.escape(week_name)}</td><td>{html.escape(opponent) if opponent else '-'}</td>"
             f"<td><a href=\"{html.escape(rel(dashboards))}\" onclick=\"if(window.gtag){{gtag('event','open_week_dash',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">Dashboards</a></td>"
             f"<td><a href=\"{html.escape(rel(summary_pdf))}\" onclick=\"if(window.gtag){{gtag('event','open_summary_pdf',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">Summary PDF</a></td>"
             f"<td><a href=\"{html.escape(rel(group_pdf))}\" onclick=\"if(window.gtag){{gtag('event','open_group_pdf',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">Group Film PDF</a></td>"
-            f"<td>{csv_links}<br/>{('<a href=\"' + html.escape(rel(snapshot)) + '\" onclick=\"if(window.gtag){gtag(\'event\', \'open_snapshot\', {event_category: \'navigation\', week: \'%s\'});}\">Snapshot</a>' % html.escape(week_name)) if snapshot.exists() else ''}</td>"
+            f"<td>{snapshot_link}</td>"
+            f"<td>{csv_links}</td>"
             f"</tr>"
         )
 
@@ -148,7 +151,7 @@ def main():
   <div class=\"section\">
     <h2>Weeks</h2>
     <table>
-      <thead><tr><th>Week</th><th>Opponent</th><th>Weekly Dashboards</th><th>Summary</th><th>Group Film</th><th>CSVs / Snapshot</th></tr></thead>
+      <thead><tr><th>Week</th><th>Opponent</th><th>Weekly Dashboards</th><th>Summary</th><th>Group Film</th><th>Snapshot</th><th>CSVs</th></tr></thead>
       <tbody>{''.join(weeks_rows)}</tbody>
     </table>
   </div>
