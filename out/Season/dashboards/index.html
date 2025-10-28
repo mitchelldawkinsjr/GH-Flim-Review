@@ -19,7 +19,7 @@
     .breadcrumbs a { color: var(--primary); text-decoration: none; }
     .breadcrumbs a:hover { text-decoration: underline; }
     table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
-    thead th { background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; }
+    thead th { background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; position: sticky; top: 0; z-index: 2; cursor: pointer; }
     tbody td { padding: 12px 14px; border-top: 1px solid var(--border); }
     tbody tr:nth-child(even) { background: #f9fafb; }
   </style>
@@ -31,5 +31,35 @@
     <thead><tr><th>Player</th><th>Catches</th><th>Yards</th><th>Drops</th><th>TDs</th><th>Avg Score</th></tr></thead>
     <tbody><tr><td><a href="Res.html">Res</a></td><td>8</td><td>185</td><td>2</td><td>31</td><td>86.0</td></tr><tr><td><a href="Zay.html">Zay</a></td><td>43</td><td>764</td><td>4</td><td>6</td><td>85.5</td></tr><tr><td><a href="Aiden.html">Aiden</a></td><td>23</td><td>324</td><td>3</td><td>1</td><td>83.9</td></tr><tr><td><a href="Taj.html">Taj</a></td><td>10</td><td>239</td><td>4</td><td>4</td><td>79.7</td></tr><tr><td><a href="Martise.html">Martise</a></td><td>23</td><td>343</td><td>8</td><td>2</td><td>78.9</td></tr><tr><td><a href="Ju.html">Ju</a></td><td>0</td><td>230</td><td>0</td><td>2</td><td>78.8</td></tr><tr><td><a href="Jakari.html">Jakari</a></td><td>0</td><td>0</td><td>2</td><td>0</td><td>74.3</td></tr><tr><td><a href="Braiden.html">Braiden</a></td><td>2</td><td>25</td><td>1</td><td>0</td><td>73.8</td></tr><tr><td><a href="Benard.html">Benard</a></td><td>0</td><td>10</td><td>0</td><td>0</td><td>73.0</td></tr><tr><td><a href="Hendry.html">Hendry</a></td><td>0</td><td>0</td><td>0</td><td>0</td><td>73.0</td></tr><tr><td><a href="Josiah.html">Josiah</a></td><td>0</td><td>0</td><td>0</td><td>0</td><td>73.0</td></tr><tr><td><a href="Khy.html">Khy</a></td><td>0</td><td>0</td><td>0</td><td>0</td><td>73.0</td></tr><tr><td><a href="Chrisitan.html">Chrisitan</a></td><td>0</td><td>0</td><td>0</td><td>0</td><td>63.2</td></tr></tbody>
   </table>
+  
+  <script>
+    (function(){
+      function makeSortable(table){
+        const ths = table.querySelectorAll('thead th');
+        ths.forEach((th, idx) => {
+          th.addEventListener('click', () => {
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const asc = th.getAttribute('data-sort') !== 'asc';
+            rows.sort((a,b) => {
+              const ta = a.children[idx].innerText.trim();
+              const tb = b.children[idx].innerText.trim();
+              const na = parseFloat(ta.replace(/[^0-9.-]/g,''));
+              const nb = parseFloat(tb.replace(/[^0-9.-]/g,''));
+              const bothNum = !isNaN(na) && !isNaN(nb);
+              let cmp = 0;
+              if(bothNum){ cmp = na - nb; } else { cmp = ta.localeCompare(tb); }
+              return asc ? cmp : -cmp;
+            });
+            ths.forEach(h=>h.removeAttribute('data-sort'));
+            th.setAttribute('data-sort', asc ? 'asc':'desc');
+            rows.forEach(r=>tbody.appendChild(r));
+          });
+        });
+      }
+      const t = document.querySelector('table'); if(t) makeSortable(t);
+    })();
+  </script>
+    
 </body>
 </html>
