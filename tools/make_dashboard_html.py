@@ -381,7 +381,8 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
         keyplays_total = sum_int('derived_keyplays')
         keyplays_per30 = per30(keyplays_total, snaps)
         targets_per30 = per30(targets, snaps)
-        drops_rate = safe_div(drops, targets)
+        # Drop rate: drops / (catches + drops)
+        drops_rate = safe_div(drops, (catches + drops))
         loafs_per30 = per30(loafs, snaps)
         ma_per30 = per30(ma, snaps)
         try:

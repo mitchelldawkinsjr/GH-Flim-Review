@@ -203,7 +203,8 @@ def compute_row(r):
     tds_per30 = per30(touchdowns, snaps)
     keyplays_per30 = per30(keyplays, snaps)
     targets_per30 = per30(targets, snaps)
-    drops_rate = safe_div(drops, targets)
+    # Drop rate counts only catchable opportunities: drops / (catches + drops)
+    drops_rate = safe_div(drops, (catches + drops))
     loafs_per30 = per30(loafs, snaps)
     ma_per30 = per30(ma, snaps)
 

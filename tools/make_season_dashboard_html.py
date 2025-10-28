@@ -343,7 +343,8 @@ def main():
         keyplays_total = int(pd.to_numeric(sub.get('derived_keyplays', 0), errors='coerce').fillna(0).sum())
         keyplays_per30 = per30(keyplays_total, snaps)
         targets_per30 = per30(targets, snaps)
-        drops_rate = safe_div(drops, targets)
+        # Drop rate: drops / (catches + drops)
+        drops_rate = safe_div(drops, (catches + drops))
         loafs_per30 = per30(loafs, snaps)
         ma_per30 = per30(ma, snaps)
 
