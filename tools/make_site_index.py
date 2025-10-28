@@ -72,7 +72,7 @@ def main():
                 if m:
                     opponent = m.group(1)
         csv_links = ' '.join(f"<a href=\"{html.escape(rel(Path(c)))}\" onclick=\"if(window.gtag){{gtag('event','open_csv',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">{html.escape(Path(c).name)}</a>" for c in csvs)
-        # Snapshot link: always render (file exists for generated weeks)
+        # Snapshot link: always render
         snapshot_rel = rel(wd / 'snapshot.html')
         snapshot_link = f"<a href=\"{html.escape(snapshot_rel)}\" onclick=\"if(window.gtag){{gtag('event','open_snapshot',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">Snapshot</a>"
         weeks_rows.append(
@@ -84,6 +84,37 @@ def main():
             f"<td>{csv_links}</td>"
             f"</tr>"
         )
+
+    sort_script = """
+  <script>
+    (function(){
+      function makeSortable(table){
+        const ths = table.querySelectorAll('thead th');
+        ths.forEach((th, idx) => {
+          th.addEventListener('click', () => {
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const asc = th.getAttribute('data-sort') !== 'asc';
+            rows.sort((a,b) => {
+              const ta = a.children[idx].innerText.trim();
+              const tb = b.children[idx].innerText.trim();
+              const na = parseFloat(ta.replace(/[^0-9.-]/g,''));
+              const nb = parseFloat(tb.replace(/[^0-9.-]/g,''));
+              const bothNum = !isNaN(na) && !isNaN(nb);
+              let cmp = 0;
+              if(bothNum){ cmp = na - nb; } else { cmp = ta.localeCompare(tb); }
+              return asc ? cmp : -cmp;
+            });
+            ths.forEach(h=>h.removeAttribute('data-sort'));
+            th.setAttribute('data-sort', asc ? 'asc':'desc');
+            rows.forEach(r=>tbody.appendChild(r));
+          });
+        });
+      }
+      const t = document.querySelector('table'); if(t) makeSortable(t);
+    })();
+  </script>
+    """
 
     html_str = f"""
 <!doctype html>
@@ -112,7 +143,7 @@ def main():
     .card {{ background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }}
     .muted {{ color: var(--muted); font-size: 12px; }}
     table {{ width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }}
-    thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; }}
+    thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; position: sticky; top: 0; z-index: 2; cursor: pointer; }}
     tbody td {{ padding: 12px 14px; border-top: 1px solid var(--border); }}
     tbody tr:nth-child(odd) {{ background: var(--row); }}
     tbody tr:nth-child(even) {{ background: var(--row-alt); }}
@@ -121,8 +152,10 @@ def main():
     a:hover {{ text-decoration: underline; }}
     details summary {{ cursor: pointer; }}
   </style>
+  {sort_script}
 </head>
 <body>
+  <div class=\"breadcrumbs\"><a href=\"index.html\">Home</a> · <a href=\"{html.escape(rel(season_index))}\">Season</a></div>
   <h1>Film Review Hub</h1>
 
   <div class=\"cards\">
