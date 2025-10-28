@@ -78,9 +78,9 @@ def main():
         weeks_rows.append(
             f"<tr><td>{html.escape(week_name)}</td><td>{html.escape(opponent) if opponent else '-'}</td>"
             f"<td><a href=\"{html.escape(rel(dashboards))}\" onclick=\"if(window.gtag){{gtag('event','open_week_dash',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">Dashboards</a></td>"
+            f"<td>{snapshot_link}</td>"
             f"<td><a href=\"{html.escape(rel(summary_pdf))}\" onclick=\"if(window.gtag){{gtag('event','open_summary_pdf',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">Summary PDF</a></td>"
             f"<td><a href=\"{html.escape(rel(group_pdf))}\" onclick=\"if(window.gtag){{gtag('event','open_group_pdf',{{event_category:'navigation',week:'{html.escape(week_name)}'}});}}\">Group Film PDF</a></td>"
-            f"<td>{snapshot_link}</td>"
             f"<td>{csv_links}</td>"
             f"</tr>"
         )
@@ -189,7 +189,7 @@ def main():
     <h2>Weeks</h2>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Week</th><th>Opponent</th><th>Weekly Dashboards</th><th>Summary</th><th>Group Film</th><th>Snapshot</th><th>CSVs</th></tr></thead>
+        <thead><tr><th>Week</th><th>Opponent</th><th>Weekly Dashboards</th><th>Snapshot</th><th>Summary</th><th>Group Film</th><th>CSVs</th></tr></thead>
         <tbody>{''.join(weeks_rows)}</tbody>
       </table>
     </div>
