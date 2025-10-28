@@ -340,16 +340,37 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
     index_items.sort(key=lambda t: t[2], reverse=True)
     rows = "".join(
         f"<tr>"
-        f"<td><a href=\"{html.escape(f)}\">{html.escape(p)}</a></td>"
+        f"<td><a href=\"{html.escape(f)}\" onclick=\"if(window.gtag){{gtag('event','open_week_player',{{event_category:'navigation',player:'{html.escape(p)}',week:'{html.escape(str(week))}'}});}}\">{html.escape(p)}</a></td>"
         f"<td>{html.escape(l)}</td>"
-        f"<td>{s:.1f}</td>"
-        f"<td>{c}</td>"
-        f"<td>{y}</td>"
-        f"<td>{d}</td>"
-        f"<td>{td}</td>"
+        f"<td class=\"num\">{s:.1f}</td>"
+        f"<td class=\"num\">{c}</td>"
+        f"<td class=\"num\">{y}</td>"
+        f"<td class=\"num\">{d}</td>"
+        f"<td class=\"num\">{td}</td>"
         f"</tr>"
         for p, f, s, l, c, y, d, td in index_items
     )
+    totals_row = ""
+    if index_items:
+        try:
+            avg_score = sum(s for _, _, s, *_ in index_items) / len(index_items)
+        except Exception:
+            avg_score = 0.0
+        total_catches = sum(c for *_, c, _, _, _ in index_items)
+        total_yards = sum(y for *_, _, y, _, _ in index_items)
+        total_drops = sum(d for *_, _, _, d, _ in index_items)
+        total_tds = sum(t for *_, _, _, _, t in index_items)
+        totals_row = (
+            f"<tr>"
+            f"<td><strong>Totals</strong></td>"
+            f"<td>-</td>"
+            f"<td class=\"num\"><strong>{avg_score:.1f}</strong></td>"
+            f"<td class=\"num\"><strong>{total_catches}</strong></td>"
+            f"<td class=\"num\"><strong>{total_yards}</strong></td>"
+            f"<td class=\"num\"><strong>{total_drops}</strong></td>"
+            f"<td class=\"num\"><strong>{total_tds}</strong></td>"
+            f"</tr>"
+        )
     try:
         home_rel_idx = os.path.relpath(Path(out_dir_p).parent.parent / 'index.html', out_dir_p)
     except Exception:
@@ -420,7 +441,10 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
     .breadcrumbs a:hover {{ text-decoration: underline; }}
     table {{ width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }}
     thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; position: sticky; top: 0; z-index: 2; cursor: pointer; }}
+    thead th[data-sort=\"asc\"]::after {{ content: " \25B2"; font-size: 10px; color: #6b7280; }}
+    thead th[data-sort=\"desc\"]::after {{ content: " \25BC"; font-size: 10px; color: #6b7280; }}
     tbody td {{ padding: 12px 14px; border-top: 1px solid var(--border); }}
+    td.num {{ text-align: right; font-variant-numeric: tabular-nums; }}
     tbody tr:nth-child(odd) {{ background: var(--row); }}
     tbody tr:nth-child(even) {{ background: var(--row-alt); }}
     tbody tr:hover {{ background: #eef2ff; }}
@@ -435,7 +459,7 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
   <div style=\"margin:8px 0 12px\"><input id=\"playerFilter\" type=\"search\" placeholder=\"Filter players...\" style=\"padding:8px 10px;border:1px solid var(--border);border-radius:8px;width:240px;\"></div>
   <table>
     <thead><tr><th>Player</th><th>Letter</th><th>Avg Score</th><th>Catches</th><th>Yards</th><th>Drops</th><th>TDs</th></tr></thead>
-    <tbody>{rows}</tbody>
+    <tbody>{rows}{totals_row}</tbody>
   </table>
 </body>
 </html>
