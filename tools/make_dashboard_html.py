@@ -291,7 +291,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
         pdf_html = (
             f"<h2 id=\"pdf\">Player PDF</h2>"
             f"<p><a href=\"{pdf_url}\" target=\"_blank\" onclick=\"if(window.gtag){{gtag('event','pdf_open', {{event_category: 'engagement', player: '{player_esc}', week: '{week_esc}'}});}}\">Open PDF</a></p>"
-            f"<object data=\"{pdf_url}\" type=\"application/pdf\" width=\"100%\" height=\"640px\">"
+            f"<object data=\"{pdf_url}\" type=\"application/pdf\" width=\"100%\" style=\"height:75vh; max-height:800px;\">"
             f"<p>PDF preview not available. <a href=\"{pdf_url}\" onclick=\"if(window.gtag){{gtag('event','pdf_download', {{event_category: 'engagement', player: '{player_esc}', week: '{week_esc}'}});}}\">Download</a></p>"
             f"</object>"
         )

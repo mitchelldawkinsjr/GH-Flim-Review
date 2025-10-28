@@ -459,7 +459,7 @@ def main():
                         sparkline_html = (
                             f"<div style=\"margin:14px 0 16px\">"
                             f"<div style=\"font-weight:600;margin:0 0 6px\">Weekly Score Trend</div>"
-                            f"<svg width=\"{width}\" height=\"{height}\" viewBox=\"0 0 {width} {height}\" aria-label=\"Weekly score trend\">"
+                            f"<svg style=\"max-width:100%\" width=\"100%\" height=\"{height}\" viewBox=\"0 0 {width} {height}\" aria-label=\"Weekly score trend\">"
                             # guide lines
                             f"<line x1=\"{pad}\" y1=\"{y_min_line:.1f}\" x2=\"{width-pad}\" y2=\"{y_min_line:.1f}\" stroke=\"#e5e7eb\" stroke-width=\"1\" />"
                             f"<line x1=\"{pad}\" y1=\"{y_mid_line:.1f}\" x2=\"{width-pad}\" y2=\"{y_mid_line:.1f}\" stroke=\"#e5e7eb\" stroke-width=\"1\" stroke-dasharray=\"3 3\" />"
