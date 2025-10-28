@@ -79,7 +79,7 @@ def collect_code_counts(df_sub: pd.DataFrame) -> dict:
     return counts
 
 
-def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, breadcrumbs_html: str = "", weekly_links_html: str = "", ga_snippet: str = "", nav_html: str = "") -> str:
+def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, breadcrumbs_html: str = "", weekly_links_html: str = "", ga_snippet: str = "", nav_html: str = "", sparkline_html: str = "") -> str:
     css = """
     :root {
       --bg: #f5f7fb;
@@ -172,6 +172,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
   <h1>{html.escape(player)}</h1>
   {breadcrumbs_html}
   <div class=\"small\">{html.escape(title)}</div>
+  {sparkline_html}
   <div class=\"grid\">\n    <div>\n      <h2>Season Totals</h2>\n      {table(metrics_rows)}\n    </div>\n    <div>\n      <h2>Rates (from totals)</h2>\n      {table(rate_rows)}\n    </div>\n  </div>
   <h2>Season Code Counts</h2>
   {codes_table}
@@ -357,13 +358,44 @@ def main():
                 weekly_rows.append(f"<tr><td>Wk{w_int}</td><td><a href=\"{html.escape(dash_rel)}\">Dashboards</a></td><td>{pdf_cell}</td></tr>")
         weekly_links_html = "<table><tr><th>Week</th><th>Dashboards</th><th>PDF</th></tr>" + ''.join(weekly_rows) + "</table>" if weekly_rows else ''
 
+        # Build score sparkline SVG from per-week average scores
+        sparkline_html = ""
+        try:
+            if 'week' in sub.columns and 'score' in sub.columns:
+                tmp = sub[['week','score']].copy()
+                tmp = tmp[~pd.isna(tmp['week'])]
+                if not tmp.empty:
+                    tmp['week'] = pd.to_numeric(tmp['week'], errors='coerce').dropna().astype(int)
+                    grp = tmp.groupby('week')['score'].mean().reset_index().sort_values('week')
+                    if not grp.empty and len(grp.index) >= 2:
+                        width, height, pad = 280, 40, 4
+                        ys = pd.to_numeric(grp['score'], errors='coerce').fillna(0.0).tolist()
+                        xs = grp['week'].tolist()
+                        min_y = min(ys); max_y = max(ys); rng_y = (max_y - min_y) or 1.0
+                        min_x = min(xs); max_x = max(xs); rng_x = (max_x - min_x) or 1.0
+                        pts = []
+                        for w, s in zip(xs, ys):
+                            x = pad + (w - min_x) * (width - 2*pad) / rng_x
+                            y = pad + (height - 2*pad) - (s - min_y) * (height - 2*pad) / rng_y
+                            pts.append(f"{x:.1f},{y:.1f}")
+                        polyline = " ".join(pts)
+                        sparkline_html = (
+                            f"<div class=\"small\" style=\"margin:6px 0\">"
+                            f"<svg width=\"{width}\" height=\"{height}\" viewBox=\"0 0 {width} {height}\" aria-label=\"Score trend\">"
+                            f"<polyline fill=\"none\" stroke=\"#2563eb\" stroke-width=\"2\" points=\"{polyline}\" />"
+                            f"</svg>"
+                            f"</div>"
+                        )
+        except Exception:
+            sparkline_html = ""
+
         try:
             home_rel_nav = os.path.relpath(Path(out_dir).parent.parent / 'index.html', out_dir)
         except Exception:
             home_rel_nav = '../index.html'
         nav_html = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel_nav)}\">Home</a> · <a href=\"{html.escape(season_rel)}\">Season</a></div>"
 
-        html_str = render_player_html(player, totals, rates, codes, args.title, breadcrumbs, weekly_links_html, ga_snippet, nav_html)
+        html_str = render_player_html(player, totals, rates, codes, args.title, breadcrumbs, weekly_links_html, ga_snippet, nav_html, sparkline_html)
         (out_dir / player_file).write_text(html_str, encoding='utf-8')
         total_yards = rec_yards + rush_yards
         index_items.append((player, player_file, score, catches, total_yards, drops, touchdowns))
