@@ -296,7 +296,6 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
                 pdf_rel = os.path.relpath(pdf_path, out_dir_p)
             except Exception:
                 pdf_rel = str(pdf_path)
-        # Nav and breadcrumbs
         root_index = Path(out_dir_p).parent.parent / 'index.html'
         week_index = Path(out_dir_p) / 'index.html'
         try:
@@ -328,27 +327,7 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
         home_rel_idx = os.path.relpath(Path(out_dir_p).parent.parent / 'index.html', out_dir_p)
     except Exception:
         home_rel_idx = '../index.html'
-    index_html = f"""
-<!doctype html>
-<html>
-<head>
-  <meta charset=\"utf-8\" />
-  <title>{html.escape(title)}</title>
-  {ga_snippet}
-  <style>
-    :root {{ --bg:#f5f7fb; --card:#ffffff; --text:#111827; --muted:#6b7280; --primary:#2563eb; --row:#ffffff; --row-alt:#f9fafb; --thead:linear-gradient(135deg,#eef2ff 0%,#e0e7ff 100%); --border:#e5e7eb; }}
-    body {{ font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }}
-    h1 {{ margin-bottom: 12px; font-weight: 700; letter-spacing: -0.01em; }}
-    .breadcrumbs {{ font-size: 12px; color: #666; margin-bottom: 8px; }}
-    .breadcrumbs a {{ color: var(--primary); text-decoration: none; }}
-    .breadcrumbs a:hover {{ text-decoration: underline; }}
-    table {{ width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }}
-    thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; position: sticky; top: 0; z-index: 2; cursor: pointer; }}
-    tbody td {{ padding: 12px 14px; border-top: 1px solid var(--border); }}
-    tbody tr:nth-child(odd) {{ background: var(--row); }}
-    tbody tr:nth-child(even) {{ background: var(--row-alt); }}
-    tbody tr:hover {{ background: #eef2ff; }}
-  </style>
+    sort_script = """
   <script>
     (function(){
       function makeSortable(table){
@@ -377,6 +356,29 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
       const t = document.querySelector('table'); if(t) makeSortable(t);
     })();
   </script>
+    """
+    index_html = f"""
+<!doctype html>
+<html>
+<head>
+  <meta charset=\"utf-8\" />
+  <title>{html.escape(title)}</title>
+  {ga_snippet}
+  <style>
+    :root {{ --bg:#f5f7fb; --card:#ffffff; --text:#111827; --muted:#6b7280; --primary:#2563eb; --row:#ffffff; --row-alt:#f9fafb; --thead:linear-gradient(135deg,#eef2ff 0%,#e0e7ff 100%); --border:#e5e7eb; }}
+    body {{ font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }}
+    h1 {{ margin-bottom: 12px; font-weight: 700; letter-spacing: -0.01em; }}
+    .breadcrumbs {{ font-size: 12px; color: #666; margin-bottom: 8px; }}
+    .breadcrumbs a {{ color: var(--primary); text-decoration: none; }}
+    .breadcrumbs a:hover {{ text-decoration: underline; }}
+    table {{ width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }}
+    thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; position: sticky; top: 0; z-index: 2; cursor: pointer; }}
+    tbody td {{ padding: 12px 14px; border-top: 1px solid var(--border); }}
+    tbody tr:nth-child(odd) {{ background: var(--row); }}
+    tbody tr:nth-child(even) {{ background: var(--row-alt); }}
+    tbody tr:hover {{ background: #eef2ff; }}
+  </style>
+  {sort_script}
 </head>
 <body>
   <div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel_idx)}\">Home</a> · <a href=\"../../Season/dashboards/index.html\">Season</a></div>
@@ -421,12 +423,10 @@ def main():
   </script>
         """
 
-    # Batch mode for CI compatibility
     if args.weekly_glob and not args.details_csv:
         paths = sorted(_glob.glob(args.weekly_glob))
         for p in paths:
             out_dir = str(Path(p).parent / 'dashboards')
-            # Infer week and pdfs_dir
             m = _re.search(r"Wk(\d+)", p)
             week = m.group(1) if m else None
             pdfs_dir = str((Path(p).parent / 'pdfs'))
@@ -434,7 +434,6 @@ def main():
         print("Batch dashboards generated.")
         return
 
-    # Weekly mode
     if not (args.details_csv and args.out_dir):
         ap.error("In weekly mode, --details_csv and --out_dir are required")
     render_week(args.details_csv, args.out_dir, args.title, args.pdfs_dir, args.week, ga_snippet)
