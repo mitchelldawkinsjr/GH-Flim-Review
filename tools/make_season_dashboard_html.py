@@ -337,7 +337,8 @@ def main():
             for w in sub['week'].astype(str).tolist():
                 rushes_total += int(rushes_by_player_week.get((player.strip(), str(w).strip()), 0))
 
-        catch_rate = safe_div(catches, targets)
+        # Catch rate: catches / (catches + drops)
+        catch_rate = safe_div(catches, (catches + drops))
         ypt = safe_div((rec_yards + rush_yards), targets)
         tds_per30 = per30(touchdowns, snaps)
         keyplays_total = int(pd.to_numeric(sub.get('derived_keyplays', 0), errors='coerce').fillna(0).sum())

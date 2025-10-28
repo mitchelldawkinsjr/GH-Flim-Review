@@ -198,7 +198,8 @@ def compute_row(r):
     keyplays = keyplays_in if (isinstance(keyplays_in, (int,float)) and keyplays_in > 0) else derived_kp
 
     # Core rates
-    catch_rate = safe_div(catches, targets)
+    # Catch rate on catchable balls only: catches / (catches + drops)
+    catch_rate = safe_div(catches, (catches + drops))
     yards_per_target = safe_div((rec_yards + rush_yards), targets)
     tds_per30 = per30(touchdowns, snaps)
     keyplays_per30 = per30(keyplays, snaps)
