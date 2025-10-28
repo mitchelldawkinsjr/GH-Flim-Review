@@ -51,6 +51,13 @@ def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
     zebra = 0
     total_loafs = 0
     scores = []
+    # Totals accumulation
+    totals = {
+        'snaps': 0,'drops': 0,'targets': 0,'catches': 0,'rec_yards': 0,
+        'rushes': 0,'rush_yards': 0,'touchdowns': 0,'missed_assignments': 0,'loafs': 0,'key_points': 0.0
+    }
+    # Try to infer dashboards path for player links (relative from snapshot.html)
+    dashboards_rel = 'dashboards'
     for r in rows:
         zebra += 1
         lcls = 's1' if zebra % 2 == 1 else 's3'
@@ -63,9 +70,28 @@ def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
         grade_cell = str(int(round(float(r['score']))))
         total_loafs += safe_int(r['loafs'])
         scores.append(float(r['score']))
+        # Accumulate totals
+        totals['snaps'] += safe_int(r['snaps'])
+        totals['drops'] += safe_int(r['drops'])
+        totals['targets'] += safe_int(r['targets'])
+        totals['catches'] += safe_int(r['catches'])
+        totals['rec_yards'] += safe_int(r['rec_yards'])
+        totals['rushes'] += safe_int(r.get('rushes', 0))
+        totals['rush_yards'] += safe_int(r['rush_yards'])
+        totals['touchdowns'] += safe_int(r['touchdowns'])
+        totals['missed_assignments'] += safe_int(r['missed_assignments'])
+        totals['loafs'] += safe_int(r['loafs'])
+        try:
+            totals['key_points'] += float(r['key_points'])
+        except Exception:
+            pass
+        # Link player to weekly dashboard
+        player_name = r["player"].strip()
+        player_file = player_name.replace(' ', '_') + '.html'
+        player_link = f"<a href=\"{dashboards_rel}/{player_file}\">{player_name}</a>"
         body_parts.append(
             '<tr style="height: 19px">'
-            f'<td class="{lcls}">{r["player"]}</td>'
+            f'<td class="{lcls}">{player_link}</td>'
             f'<td class="{rcls}">{r["snaps"]}</td>'
             f'<td class="{lcls}">{drops_cell}</td>'
             f'<td class="{rcls}">{r["targets"]}</td>'
@@ -84,6 +110,26 @@ def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
 
     unit_score = sum(scores) / len(scores) if scores else 0.0
     unit_grade = letter(unit_score)
+
+    # Totals row
+    totals_row = (
+        '<tr style="height: 19px">'
+        '<td class="s6" dir="ltr">Totals</td>'
+        f"<td class=\"s2\" dir=\"ltr\">{totals['snaps']}</td>"
+        f"<td class=\"s1\" dir=\"ltr\">{totals['drops']}</td>"
+        f"<td class=\"s2\" dir=\"ltr\">{totals['targets']}</td>"
+        f"<td class=\"s2\" dir=\"ltr\">{totals['catches']}</td>"
+        f"<td class=\"s2\" dir=\"ltr\">{totals['rec_yards']}</td>"
+        f"<td class=\"s1\" dir=\"ltr\">{totals['rushes']}</td>"
+        f"<td class=\"s1\" dir=\"ltr\">{totals['rush_yards']}</td>"
+        f"<td class=\"s1\" dir=\"ltr\">{totals['touchdowns']}</td>"
+        f"<td class=\"s2\" dir=\"ltr\">{totals['missed_assignments']}</td>"
+        f"<td class=\"s2\" dir=\"ltr\">{totals['loafs']}</td>"
+        f"<td class=\"s2\" dir=\"ltr\">{totals['key_points']:.1f}</td>"
+        '<td class="s2" dir="ltr"></td>'
+        '<td></td>'
+        '</tr>'
+    )
 
     footer = (
         '<tr style="height: 19px">'
@@ -112,6 +158,7 @@ def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
     html = [css, ga_snippet, '<div class="ritz grid-container" dir="ltr">', '<table class="waffle" cellspacing="0" cellpadding="0">', '<thead></thead><tbody>']
     html.append(header)
     html.extend(body_parts)
+    html.append(totals_row)
     html.append(footer)
     html.append('</tbody></table></div>')
     return '\n'.join(html)
