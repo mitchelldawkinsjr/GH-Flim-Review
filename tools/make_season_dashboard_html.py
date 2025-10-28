@@ -368,7 +368,7 @@ def main():
                     tmp['week'] = pd.to_numeric(tmp['week'], errors='coerce').dropna().astype(int)
                     grp = tmp.groupby('week')['score'].mean().reset_index().sort_values('week')
                     if not grp.empty and len(grp.index) >= 2:
-                        width, height, pad = 320, 64, 12
+                        width, height, pad = 480, 120, 24
                         ys = pd.to_numeric(grp['score'], errors='coerce').fillna(0.0).tolist()
                         xs = grp['week'].tolist()
                         min_y = min(ys); max_y = max(ys); rng_y = (max_y - min_y) or 1.0
@@ -382,33 +382,39 @@ def main():
                         for w, s in zip(xs, ys):
                             x, y = xy(w, s)
                             pts.append(f"{x:.1f},{y:.1f}")
-                            dots.append(f"<circle cx=\"{x:.1f}\" cy=\"{y:.1f}\" r=\"2.5\" fill=\"#2563eb\" />")
+                            dots.append(f"<circle cx=\"{x:.1f}\" cy=\"{y:.1f}\" r=\"3.5\" fill=\"#2563eb\" />")
                         polyline = " ".join(pts)
                         # Labels
                         x_left, _ = xy(min_x, ys[xs.index(min_x)])
                         x_right, _ = xy(max_x, ys[xs.index(max_x)])
                         y_min_line = pad + (height - 2*pad)
                         y_max_line = pad
+                        y_mid_line = pad + (height - 2*pad)/2
+                        mid_val = min_y + rng_y/2
                         min_label = f"{min_y:.0f}"
                         max_label = f"{max_y:.0f}"
+                        mid_label = f"{mid_val:.0f}"
                         wk_left = f"Wk{min_x}"
                         wk_right = f"Wk{max_x}"
                         sparkline_html = (
-                            f"<div class=\"small\" style=\"margin:8px 0 10px\">"
-                            f"<svg width=\"{width}\" height=\"{height}\" viewBox=\"0 0 {width} {height}\" aria-label=\"Score trend\">"
+                            f"<div style=\"margin:14px 0 16px\">"
+                            f"<div style=\"font-weight:600;margin:0 0 6px\">Weekly Score Trend</div>"
+                            f"<svg width=\"{width}\" height=\"{height}\" viewBox=\"0 0 {width} {height}\" aria-label=\"Weekly score trend\">"
                             # guide lines
                             f"<line x1=\"{pad}\" y1=\"{y_min_line:.1f}\" x2=\"{width-pad}\" y2=\"{y_min_line:.1f}\" stroke=\"#e5e7eb\" stroke-width=\"1\" />"
+                            f"<line x1=\"{pad}\" y1=\"{y_mid_line:.1f}\" x2=\"{width-pad}\" y2=\"{y_mid_line:.1f}\" stroke=\"#e5e7eb\" stroke-width=\"1\" stroke-dasharray=\"3 3\" />"
                             f"<line x1=\"{pad}\" y1=\"{y_max_line:.1f}\" x2=\"{width-pad}\" y2=\"{y_max_line:.1f}\" stroke=\"#e5e7eb\" stroke-width=\"1\" />"
                             # line
-                            f"<polyline fill=\"none\" stroke=\"#2563eb\" stroke-width=\"2\" points=\"{polyline}\" />"
+                            f"<polyline fill=\"none\" stroke=\"#2563eb\" stroke-width=\"2.5\" points=\"{polyline}\" />"
                             # dots
                             + "".join(dots) +
                             # y labels
-                            f"<text x=\"{width-pad+2}\" y=\"{y_max_line+3:.1f}\" font-size=\"9\" fill=\"#6b7280\">{max_label}</text>"
-                            f"<text x=\"{width-pad+2}\" y=\"{y_min_line+3:.1f}\" font-size=\"9\" fill=\"#6b7280\">{min_label}</text>"
+                            f"<text x=\"{width-pad+4}\" y=\"{y_max_line+4:.1f}\" font-size=\"11\" fill=\"#6b7280\">{max_label}</text>"
+                            f"<text x=\"{width-pad+4}\" y=\"{y_mid_line+4:.1f}\" font-size=\"11\" fill=\"#6b7280\">{mid_label}</text>"
+                            f"<text x=\"{width-pad+4}\" y=\"{y_min_line+4:.1f}\" font-size=\"11\" fill=\"#6b7280\">{min_label}</text>"
                             # x labels
-                            f"<text x=\"{x_left}\" y=\"{height-2}\" font-size=\"9\" text-anchor=\"middle\" fill=\"#6b7280\">{wk_left}</text>"
-                            f"<text x=\"{x_right}\" y=\"{height-2}\" font-size=\"9\" text-anchor=\"middle\" fill=\"#6b7280\">{wk_right}</text>"
+                            f"<text x=\"{x_left}\" y=\"{height-6}\" font-size=\"11\" text-anchor=\"middle\" fill=\"#6b7280\">{wk_left}</text>"
+                            f"<text x=\"{x_right}\" y=\"{height-6}\" font-size=\"11\" text-anchor=\"middle\" fill=\"#6b7280\">{wk_right}</text>"
                             f"</svg>"
                             f"</div>"
                         )
