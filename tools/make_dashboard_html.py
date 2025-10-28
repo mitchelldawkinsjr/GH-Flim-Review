@@ -372,6 +372,26 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
     })();
   </script>
     """
+    filter_script = """
+  <script>
+    (function(){
+      const input = document.getElementById('playerFilter');
+      if(!input) return;
+      input.addEventListener('input', function(){
+        const q = this.value.trim().toLowerCase();
+        const rows = Array.from(document.querySelectorAll('tbody tr'));
+        rows.forEach(function(r){
+          const name = (r.children[0] && r.children[0].innerText ? r.children[0].innerText : '').toLowerCase();
+          r.style.display = name.indexOf(q) !== -1 ? '' : 'none';
+        });
+      });
+    })();
+  </script>
+    """
+    try:
+        csv_rel = os.path.relpath(details_csv, out_dir_p)
+    except Exception:
+        csv_rel = details_csv
     index_html = f"""
 <!doctype html>
 <html>
@@ -394,10 +414,13 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
     tbody tr:hover {{ background: #eef2ff; }}
   </style>
   {sort_script}
+  {filter_script}
 </head>
 <body>
   <div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel_idx)}\">Home</a> · <a href=\"../../Season/dashboards/index.html\">Season</a></div>
   <h1>{html.escape(title)}</h1>
+  <div class=\"small\"><a href=\"{html.escape(csv_rel)}\">Download details CSV</a></div>
+  <div style=\"margin:8px 0 12px\"><input id=\"playerFilter\" type=\"search\" placeholder=\"Filter players...\" style=\"padding:8px 10px;border:1px solid var(--border);border-radius:8px;width:240px;\"></div>
   <table>
     <thead><tr><th>Player</th><th>Avg Score</th></tr></thead>
     <tbody>{rows}</tbody>
