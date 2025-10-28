@@ -151,7 +151,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
     for k, v in codes_rows:
         meaning = CODE_LABELS.get(k, k)
         codes_table_rows.append(
-            f"<tr><td>{html.escape(k)}</td><td>{html.escape(meaning)}</td><td>{v}</td></tr>"
+            f"<tr><td title=\"{html.escape(meaning)}\">{html.escape(k)}</td><td>{html.escape(meaning)}</td><td>{v}</td></tr>"
         )
     codes_table_rows.append("</table>")
     codes_table = "".join(codes_table_rows)
