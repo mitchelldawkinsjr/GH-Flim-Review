@@ -233,7 +233,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
         week_esc = html.escape(str(week_val) if week_val else "")
         pdf_url = html.escape(pdf_rel)
         pdf_html = (
-            f"<h2>Player PDF</h2>"
+            f"<h2 id=\"pdf\">Player PDF</h2>"
             f"<p><a href=\"{pdf_url}\" target=\"_blank\" onclick=\"if(window.gtag){{gtag('event','pdf_open', {{event_category: 'engagement', player: '{player_esc}', week: '{week_esc}'}});}}\">Open PDF</a></p>"
             f"<object data=\"{pdf_url}\" type=\"application/pdf\" width=\"100%\" height=\"640px\">"
             f"<p>PDF preview not available. <a href=\"{pdf_url}\" onclick=\"if(window.gtag){{gtag('event','pdf_download', {{event_category: 'engagement', player: '{player_esc}', week: '{week_esc}'}});}}\">Download</a></p>"
@@ -381,7 +381,7 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
         f"<td class=\"num\">{y}</td>"
         f"<td class=\"num\">{d}</td>"
         f"<td class=\"num\">{td}</td>"
-        f"<td>{('<a href=\\\"' + html.escape(pdf) + '\\\">PDF</a>') if pdf else '-'}</td>"
+        f"<td><a href=\"{html.escape(f)}#pdf\">PDF</a></td>"
         f"</tr>"
         for p, f, s, l, c, y, d, td, pdf in index_items
     )
