@@ -102,7 +102,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
     .breadcrumbs a:hover { text-decoration: underline; }
     table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
     thead th { background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; }
-    tbody td { padding: 12px 14px; border-top: 1px solid var(--border); }
+    tbody td, td { padding: 12px 14px; border-top: 1px solid var(--border); }
     tbody tr:nth-child(odd) { background: var(--row); }
     tbody tr:nth-child(even) { background: var(--row-alt); }
     tbody tr:hover { background: #eef2ff; }
@@ -232,7 +232,6 @@ def main():
                 dprep = pd.read_csv(pp)
             except Exception:
                 continue
-            # Find rushes column if present
             rushes_col = None
             for c in ['Rushes', 'rushes']:
                 if c in dprep.columns:
@@ -240,7 +239,6 @@ def main():
                     break
             if rushes_col is None:
                 continue
-            # Normalize keys
             if 'player' not in dprep.columns or 'week' not in dprep.columns:
                 continue
             tmp = dprep.groupby(['player','week'])[rushes_col].sum().reset_index()
@@ -275,7 +273,6 @@ def main():
         loafs = sum_int('loafs')
         code_points = float(pd.to_numeric(sub.get('code_points', 0.0), errors='coerce').fillna(0.0).sum())
         games = int(sub['week'].nunique()) if 'week' in sub.columns else len(sub.index)
-        # Rush attempts (from prepared files) if available
         rushes_total = 0
         if 'week' in sub.columns and rushes_by_player_week:
             for w in sub['week'].astype(str).tolist():
@@ -323,14 +320,10 @@ def main():
         codes = collect_code_counts(sub)
 
         player_file = f"{player.strip().replace(' ', '_')}.html"
-        # If we have rush attempts, include them in the rendered HTML by temporarily
-        # adding to totals and inserting a row in the HTML after rendering metrics.
-        # Simpler: inject into totals now and let the renderer show it.
         if rushes_total:
             totals['rushes'] = rushes_total
-        # Breadcrumbs: Home > Season > Player
-        root_index = Path(out_dir).parent.parent / 'index.html'  # out/index.html
-        season_index = Path(out_dir) / 'index.html'              # out/Season/dashboards/index.html
+        root_index = Path(out_dir).parent.parent / 'index.html'
+        season_index = Path(out_dir) / 'index.html'
         try:
             home_rel = os.path.relpath(root_index, out_dir)
             season_rel = os.path.relpath(season_index, out_dir)
@@ -339,16 +332,14 @@ def main():
             season_rel = 'index.html'
         breadcrumbs = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel)}\">Home</a> &rsaquo; <a href=\"{html.escape(season_rel)}\">Season</a> &rsaquo; <span>{html.escape(player)}</span></div>"
 
-        # Weekly links table for this player
         weekly_rows = []
         if 'week' in sub.columns:
-            # Normalize weeks to integers to avoid values like '1.0', skip NaN
             raw_weeks = sub['week'].tolist()
             week_ints = sorted({int(float(w)) for w in raw_weeks if (not pd.isna(w)) and str(w).strip() != ''})
             player_file_name = f"{player.strip().replace(' ', '_')}.html"
             for w_int in week_ints:
                 try:
-                    root = Path(out_dir).parent.parent  # out/
+                    root = Path(out_dir).parent.parent
                     wk_dir = root / f"Wk{w_int}"
                     dash_player = wk_dir / 'dashboards' / player_file_name
                     dash_index = wk_dir / 'dashboards' / 'index.html'
@@ -366,7 +357,6 @@ def main():
                 weekly_rows.append(f"<tr><td>Wk{w_int}</td><td><a href=\"{html.escape(dash_rel)}\">Dashboards</a></td><td>{pdf_cell}</td></tr>")
         weekly_links_html = "<table><tr><th>Week</th><th>Dashboards</th><th>PDF</th></tr>" + ''.join(weekly_rows) + "</table>" if weekly_rows else ''
 
-        # Simple nav
         try:
             home_rel_nav = os.path.relpath(Path(out_dir).parent.parent / 'index.html', out_dir)
         except Exception:
@@ -378,7 +368,6 @@ def main():
         total_yards = rec_yards + rush_yards
         index_items.append((player, player_file, score, catches, total_yards, drops, touchdowns))
 
-    # Index page
     index_items.sort(key=lambda t: t[2], reverse=True)
     rows = "".join(
         f"<tr>"
@@ -391,36 +380,11 @@ def main():
         f"</tr>"
         for p, f, s, c, y, d, td in index_items
     )
-    # Breadcrumbs for season index: Home > Season
     try:
-        home_rel_idx = os.path.relpath(Path(out_dir).parent.parent / 'index.html', out_dir)  # out/index.html
+        home_rel_idx = os.path.relpath(Path(out_dir).parent.parent / 'index.html', out_dir)
     except Exception:
         home_rel_idx = '../../index.html'
-    index_html = f"""
-<!doctype html>
-<html>
-<head>
-  <meta charset=\"utf-8\" />
-  <title>{html.escape(args.title)}</title>
-  {ga_snippet}
-  <style>
-    :root {{
-      --bg: #f5f7fb;
-      --card: #ffffff;
-      --text: #111827;
-      --border: #e5e7eb;
-      --thead: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-      --primary: #2563eb;
-    }}
-    body {{ font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }}
-    .breadcrumbs {{ font-size: 12px; color: #666; margin-bottom: 8px; }}
-    .breadcrumbs a {{ color: var(--primary); text-decoration: none; }}
-    .breadcrumbs a:hover {{ text-decoration: underline; }}
-    table {{ width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }}
-    thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; position: sticky; top: 0; z-index: 2; cursor: pointer; }}
-    tbody td {{ padding: 12px 14px; border-top: 1px solid var(--border); }}
-    tbody tr:nth-child(even) {{ background: #f9fafb; }}
-  </style>
+    sort_script = """
   <script>
     (function(){
       function makeSortable(table){
@@ -449,6 +413,32 @@ def main():
       const t = document.querySelector('table'); if(t) makeSortable(t);
     })();
   </script>
+    """
+    index_html = f"""
+<!doctype html>
+<html>
+<head>
+  <meta charset=\"utf-8\" />
+  <title>{html.escape(args.title)}</title>
+  {ga_snippet}
+  <style>
+    :root {{
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #111827;
+      --border: #e5e7eb;
+      --thead: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+      --primary: #2563eb;
+    }}
+    body {{ font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }}
+    .breadcrumbs {{ font-size: 12px; color: #666; margin-bottom: 8px; }}
+    .breadcrumbs a {{ color: var(--primary); text-decoration: none; }}
+    .breadcrumbs a:hover {{ text-decoration: underline; }}
+    table {{ width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }}
+    thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; position: sticky; top: 0; z-index: 2; cursor: pointer; }}
+    tbody td {{ padding: 12px 14px; border-top: 1px solid var(--border); }}
+    tbody tr:nth-child(even) {{ background: #f9fafb; }}
+  </style>
 </head>
 <body>
   <h1>{html.escape(args.title)}</h1>
@@ -457,6 +447,7 @@ def main():
     <thead><tr><th>Player</th><th>Catches</th><th>Yards</th><th>Drops</th><th>TDs</th><th>Avg Score</th></tr></thead>
     <tbody>{rows}</tbody>
   </table>
+  {sort_script}
 </body>
 </html>
 """
