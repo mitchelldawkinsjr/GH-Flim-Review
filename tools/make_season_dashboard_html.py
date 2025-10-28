@@ -79,7 +79,7 @@ def collect_code_counts(df_sub: pd.DataFrame) -> dict:
     return counts
 
 
-def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, breadcrumbs_html: str = "", weekly_links_html: str = "", ga_snippet: str = "") -> str:
+def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, breadcrumbs_html: str = "", weekly_links_html: str = "", ga_snippet: str = "", nav_html: str = "") -> str:
     css = """
     :root {
       --bg: #f5f7fb;
@@ -102,7 +102,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
     .breadcrumbs a:hover { text-decoration: underline; }
     table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
     thead th { background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; }
-    tbody td, td { padding: 12px 14px; border-top: 1px solid var(--border); }
+    tbody td { padding: 12px 14px; border-top: 1px solid var(--border); }
     tbody tr:nth-child(odd) { background: var(--row); }
     tbody tr:nth-child(even) { background: var(--row-alt); }
     tbody tr:hover { background: #eef2ff; }
@@ -168,6 +168,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
   <link rel=\"icon\" href=\"data:,\" />
   </head>
 <body>
+  {nav_html}
   <h1>{html.escape(player)}</h1>
   {breadcrumbs_html}
   <div class=\"small\">{html.escape(title)}</div>
@@ -365,7 +366,14 @@ def main():
                 weekly_rows.append(f"<tr><td>Wk{w_int}</td><td><a href=\"{html.escape(dash_rel)}\">Dashboards</a></td><td>{pdf_cell}</td></tr>")
         weekly_links_html = "<table><tr><th>Week</th><th>Dashboards</th><th>PDF</th></tr>" + ''.join(weekly_rows) + "</table>" if weekly_rows else ''
 
-        html_str = render_player_html(player, totals, rates, codes, args.title, breadcrumbs, weekly_links_html, ga_snippet)
+        # Simple nav
+        try:
+            home_rel_nav = os.path.relpath(Path(out_dir).parent.parent / 'index.html', out_dir)
+        except Exception:
+            home_rel_nav = '../index.html'
+        nav_html = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel_nav)}\">Home</a> · <a href=\"{html.escape(season_rel)}\">Season</a></div>"
+
+        html_str = render_player_html(player, totals, rates, codes, args.title, breadcrumbs, weekly_links_html, ga_snippet, nav_html)
         (out_dir / player_file).write_text(html_str, encoding='utf-8')
         total_yards = rec_yards + rush_yards
         index_items.append((player, player_file, score, catches, total_yards, drops, touchdowns))
@@ -409,10 +417,38 @@ def main():
     .breadcrumbs a {{ color: var(--primary); text-decoration: none; }}
     .breadcrumbs a:hover {{ text-decoration: underline; }}
     table {{ width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }}
-    thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; }}
+    thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; position: sticky; top: 0; z-index: 2; cursor: pointer; }}
     tbody td {{ padding: 12px 14px; border-top: 1px solid var(--border); }}
     tbody tr:nth-child(even) {{ background: #f9fafb; }}
   </style>
+  <script>
+    (function(){
+      function makeSortable(table){
+        const ths = table.querySelectorAll('thead th');
+        ths.forEach((th, idx) => {
+          th.addEventListener('click', () => {
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const asc = th.getAttribute('data-sort') !== 'asc';
+            rows.sort((a,b) => {
+              const ta = a.children[idx].innerText.trim();
+              const tb = b.children[idx].innerText.trim();
+              const na = parseFloat(ta.replace(/[^0-9.-]/g,''));
+              const nb = parseFloat(tb.replace(/[^0-9.-]/g,''));
+              const bothNum = !isNaN(na) && !isNaN(nb);
+              let cmp = 0;
+              if(bothNum){ cmp = na - nb; } else { cmp = ta.localeCompare(tb); }
+              return asc ? cmp : -cmp;
+            });
+            ths.forEach(h=>h.removeAttribute('data-sort'));
+            th.setAttribute('data-sort', asc ? 'asc':'desc');
+            rows.forEach(r=>tbody.appendChild(r));
+          });
+        });
+      }
+      const t = document.querySelector('table'); if(t) makeSortable(t);
+    })();
+  </script>
 </head>
 <body>
   <h1>{html.escape(args.title)}</h1>
