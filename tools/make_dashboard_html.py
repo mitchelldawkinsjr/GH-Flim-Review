@@ -167,10 +167,13 @@ def build_performance_insights(player: str, totals: dict, code_counts: dict, not
 
     avg_yards_per_catch = (rec_yards / catches) if catches > 0 else 0.0
     depth_text = 'short-area/possession' if avg_yards_per_catch < 10 else ('intermediate' if avg_yards_per_catch < 17 else 'explosive/deep')
-    yac_text = 'YAC-driven' if bt_cnt >= max(1, catches // 6) else ('balanced' if bt_cnt > 0 else 'mostly at-catch')
+    # Explosiveness is YAC-only per rubric clarification; deep-ball is separate
+    yac_explosive = bt_cnt >= max(1, catches // 6)
+    yac_text = 'explosive after-catch' if yac_explosive else ('some YAC' if bt_cnt > 0 else 'at-catch production')
     chain_rate = (fd_cnt / catches) if catches > 0 else 0.0
 
     notes_bits = []
+    deep_threat = avg_yards_per_catch >= 17.0
     if note_signals:
         if note_signals.get('yac', 0) > 0:
             notes_bits.append('multiple YAC mentions in notes')
@@ -178,6 +181,7 @@ def build_performance_insights(player: str, totals: dict, code_counts: dict, not
             notes_bits.append('screens featured')
         if any(note_signals.get(k, 0) > 0 for k in ['go','post','fade','corner','wheel']):
             notes_bits.append('vertical routes tagged in notes')
+            deep_threat = True
         if any(note_signals.get(k, 0) > 0 for k in ['slant','dig','out','in']):
             notes_bits.append('in-breaking route volume')
     notes_text = ("; ".join(notes_bits)) if notes_bits else "route mix inferred from production"
@@ -188,7 +192,8 @@ def build_performance_insights(player: str, totals: dict, code_counts: dict, not
         f"<ul>"
         f"<li><strong>Usage profile</strong>: {depth_text} (avg {avg_yards_per_catch:.1f} yds/catch).</li>"
         f"<li><strong>Chain mover</strong>: {fd_cnt} first downs ({chain_rate*100:.0f}% of catches).</li>"
-        f"<li><strong>Explosiveness</strong>: {touchdowns} TDs, {sc_cnt} spectacular catches; yards trend {yac_text} (BT: {bt_cnt}).</li>"
+        f"<li><strong>Explosiveness (YAC)</strong>: {yac_text} (Broken Tackles: {bt_cnt}).</li>"
+        f"<li><strong>Deep-ball threat</strong>: {'yes' if deep_threat else 'developing'} (avg {avg_yards_per_catch:.1f} yds/catch{', vertical tags in notes' if any(note_signals.get(k,0)>0 for k in ['go','post','fade','corner','wheel']) else ''}).</li>"
         f"<li><strong>Ball security</strong>: {drops} drops.</li>"
         f"<li><strong>Film tags</strong>: {html.escape(notes_text)}.</li>"
         f"</ul>"

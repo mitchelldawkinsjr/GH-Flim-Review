@@ -108,13 +108,17 @@ def build_season_narrative(player: str, totals: dict, rates: dict, code_counts: 
 
     avg_yards_per_catch = (rec_yards / catches) if catches > 0 else 0.0
     usage = 'short-area/possession' if avg_yards_per_catch < 10 else ('intermediate' if avg_yards_per_catch < 17 else 'explosive/deep')
-    yac_profile = 'YAC-driven' if bt_cnt >= max(1, catches // 6) else ('balanced' if bt_cnt > 0 else 'mostly at-catch')
+    # Explosiveness is YAC-only; deep-ball threat is separate
+    yac_explosive = bt_cnt >= max(1, catches // 6)
+    yac_profile = 'explosive after-catch' if yac_explosive else ('some YAC' if bt_cnt > 0 else 'at-catch production')
     chain_rate = (fd_cnt / catches) if catches > 0 else 0.0
+    deep_threat = avg_yards_per_catch >= 17.0
 
     lines = [
         f"Season grade {letter_grade} ({score:.1f}). {catches} catches for {total_yards} yards and {touchdowns} TDs over {games} game{'s' if games!=1 else ''}.",
         f"Role skewed {usage}: {avg_yards_per_catch:.1f} yards per catch, {ypt:.2f} yards per target.",
-        f"Chain-mover impact: {fd_cnt} first downs ({chain_rate*100:.0f}% of catches) and {e_cnt} effort plays; explosive output includes {sc_cnt} spectacular catch{'es' if sc_cnt!=1 else ''} and BT impact ({bt_cnt}).",
+        f"Chain-mover impact: {fd_cnt} first downs ({chain_rate*100:.0f}% of catches) and {e_cnt} effort plays.",
+        f"Explosiveness (YAC): {yac_profile} (Broken Tackles: {bt_cnt}). Deep-ball threat: {'yes' if deep_threat else 'developing'} (avg {avg_yards_per_catch:.1f} yds/catch).",
     ]
     if drops > 0 or drops_rate > 0.0:
         lines.append(f"Ball security: {drops} drop{'s' if drops!=1 else ''} ({drops_rate*100:.0f}% of targets).")
