@@ -335,9 +335,21 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
         breadcrumbs = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel)}\">Home</a> &rsaquo; <a href=\"{html.escape(week_rel)}\">Week</a> &rsaquo; <span>{html.escape(player)}</span></div>"
         html_str = render_player_html(player, totals, rates, codes, title, pdf_rel, breadcrumbs, ga_snippet, week, nav_html)
         (out_dir_p / player_file).write_text(html_str, encoding='utf-8')
-        index_items.append((player, player_file, score))
+        total_yards = rec_yards + rush_yards
+        index_items.append((player, player_file, score, letter_grade, catches, total_yards, drops, touchdowns))
     index_items.sort(key=lambda t: t[2], reverse=True)
-    rows = "".join(f"<tr><td><a href=\"{html.escape(f)}\">{html.escape(p)}</a></td><td>{s:.1f}</td></tr>" for p, f, s in index_items)
+    rows = "".join(
+        f"<tr>"
+        f"<td><a href=\"{html.escape(f)}\">{html.escape(p)}</a></td>"
+        f"<td>{html.escape(l)}</td>"
+        f"<td>{s:.1f}</td>"
+        f"<td>{c}</td>"
+        f"<td>{y}</td>"
+        f"<td>{d}</td>"
+        f"<td>{td}</td>"
+        f"</tr>"
+        for p, f, s, l, c, y, d, td in index_items
+    )
     try:
         home_rel_idx = os.path.relpath(Path(out_dir_p).parent.parent / 'index.html', out_dir_p)
     except Exception:
@@ -422,7 +434,7 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
   <div class=\"small\"><a href=\"{html.escape(csv_rel)}\">Download details CSV</a></div>
   <div style=\"margin:8px 0 12px\"><input id=\"playerFilter\" type=\"search\" placeholder=\"Filter players...\" style=\"padding:8px 10px;border:1px solid var(--border);border-radius:8px;width:240px;\"></div>
   <table>
-    <thead><tr><th>Player</th><th>Avg Score</th></tr></thead>
+    <thead><tr><th>Player</th><th>Letter</th><th>Avg Score</th><th>Catches</th><th>Yards</th><th>Drops</th><th>TDs</th></tr></thead>
     <tbody>{rows}</tbody>
   </table>
 </body>
