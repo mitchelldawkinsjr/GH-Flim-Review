@@ -4,7 +4,8 @@ from pathlib import Path
 import os
 import pandas as pd
 import html
-import glob
+import glob as _glob
+import re as _re
 
 CODE_LABELS = {
     'TD': 'Touchdown',
@@ -80,10 +81,6 @@ def collect_code_counts(df_sub: pd.DataFrame) -> dict:
 
 
 def build_coach_review(player: str, totals: dict, rates: dict, code_counts: dict) -> str:
-    """Create a short, player-facing weekly review based on totals/rates/codes.
-    Returns an HTML block styled like existing cards (table with a single cell).
-    """
-    # Summary line
     catches = int(totals.get('catches', 0))
     targets = int(totals.get('targets', 0))
     rec_yards = int(totals.get('rec_yards', 0))
@@ -96,7 +93,6 @@ def build_coach_review(player: str, totals: dict, rates: dict, code_counts: dict
     catch_rate_pct = f"{rates.get('catch_rate', 0.0)*100:.1f}%"
     ypt = f"{rates.get('ypt', 0.0):.2f}"
 
-    # What stood out (pick a few positive signals)
     e_cnt = int(code_counts.get('E', 0))
     fd_cnt = int(code_counts.get('FD', 0))
     p_cnt = int(code_counts.get('P', 0))
@@ -121,7 +117,6 @@ def build_coach_review(player: str, totals: dict, rates: dict, code_counts: dict
         stood_out_parts.append("created positive plays and executed assignments")
     stood_out = ", ".join(stood_out_parts)
 
-    # Improvements
     improve_parts = []
     if loafs > 0:
         improve_parts.append("Eliminate loafs — sprint off-screen and finish every rep.")
@@ -132,36 +127,24 @@ def build_coach_review(player: str, totals: dict, rates: dict, code_counts: dict
     if not improve_parts:
         improve_parts.append("Keep assignments clean and finish blocks through the whistle.")
 
-    # Next week focus (goals)
-    goals = []
-    goals.append("0 loafs")
-    goals.append("75%+ catch rate")
-    if drops > 0:
-        goals.append("0 drops")
-    else:
-        goals.append("maintain 0 drops")
+    goals = ["0 loafs", "75%+ catch rate"]
+    goals.append("0 drops" if drops > 0 else "maintain 0 drops")
     goals.append("stack effort plays and first downs")
 
-    review_html = f"""
-  <h2>Coach Review</h2>
-  <table>
-    <tr><th>Review</th></tr>
-    <tr><td>
-      <ul>
-        <li><strong>Summary</strong>: {letter} ({score:.1f}). {catches} catches on {targets} targets for {rec_yards} yards and {tds} TD{'s' if tds!=1 else ''}. {drops} drops, {ma} MA, {loafs} loafs.</li>
-        <li><strong>What stood out</strong>: {html.escape(stood_out)}</li>
-        <li><strong>Efficiency</strong>: {catch_rate_pct} catch rate and {ypt} yards per target.</li>
-        <li><strong>Improve</strong>: {' '.join(html.escape(s) for s in improve_parts)}</li>
-        <li><strong>Next week focus</strong>: {', '.join(html.escape(g) for g in goals)}.</li>
-      </ul>
-      Keep the same intent and finish habits on every snap—your impact is elite when the motor runs hot.
-    </td></tr>
-  </table>
-    """
-    return review_html
+    return (
+        "<h2>Coach Review</h2>"
+        "<table><tr><th>Review</th></tr><tr><td>"
+        f"<ul><li><strong>Summary</strong>: {letter} ({score:.1f}). {catches} catches on {targets} targets for {rec_yards} yards and {tds} TD{'s' if tds!=1 else ''}. {drops} drops, {ma} MA, {loafs} loafs.</li>"
+        f"<li><strong>What stood out</strong>: {html.escape(stood_out)}</li>"
+        f"<li><strong>Efficiency</strong>: {catch_rate_pct} catch rate and {ypt} yards per target.</li>"
+        f"<li><strong>Improve</strong>: {' '.join(html.escape(s) for s in improve_parts)}</li>"
+        f"<li><strong>Next week focus</strong>: {', '.join(html.escape(g) for g in goals)}.</li></ul>"
+        "Keep the same intent and finish habits on every snap—your impact is elite when the motor runs hot."
+        "</td></tr></table>"
+    )
 
 
-def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, breadcrumbs_html: str = "", weekly_links_html: str = "", ga_snippet: str = "", nav_html: str = "") -> str:
+def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, pdf_rel: str | None = None, breadcrumbs_html: str = "", ga_snippet: str = "", week_val: str | None = None, nav_html: str = "") -> str:
     css = """
     :root {
       --bg: #f5f7fb;
@@ -183,6 +166,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
     .breadcrumbs a { color: var(--primary); text-decoration: none; }
     .breadcrumbs a:hover { text-decoration: underline; }
     table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+    table h2 { margin: 0; }
     thead th { background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; }
     tbody td, td { padding: 12px 14px; border-top: 1px solid var(--border); }
     tbody tr:nth-child(odd) { background: var(--row); }
@@ -193,7 +177,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
     """
 
     metrics_rows = [
-        ("Season Grade (avg)", f"{rates['grade']} ({rates['score']:.1f})"),
+        ("Grade", f"{rates['grade']} ({rates['score']:.1f})"),
         ("Snaps", totals['snaps']),
         ("Targets", totals['targets']),
         ("Catches", totals['catches']),
@@ -204,10 +188,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
         ("Missed Assignments", totals['ma']),
         ("Loafs", totals['loafs']),
         ("Key Plays Points", f"{totals['code_points']:.1f}"),
-        ("Games", totals['games']),
     ]
-    if 'rushes' in totals:
-        metrics_rows.insert(6, ("Rush Attempts", totals['rushes']))
 
     rate_rows = [
         ("Catch Rate", f"{rates['catch_rate']*100:.1f}%"),
@@ -221,6 +202,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
     ]
 
     codes_rows = sorted(code_counts.items(), key=lambda kv: kv[1], reverse=True)
+
     def table(rows):
         html_rows = ["<table>", "<tr><th>Metric</th><th>Value</th></tr>"]
         for k, v in rows:
@@ -228,8 +210,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
         html_rows.append("</table>")
         return "\n".join(html_rows)
 
-    codes_table_rows = []
-    codes_table_rows.append("<table><tr><th>Code</th><th>Meaning</th><th>Count</th></tr>")
+    codes_table_rows = ["<table><tr><th>Code</th><th>Meaning</th><th>Count</th></tr>"]
     for k, v in codes_rows:
         meaning = CODE_LABELS.get(k, k)
         codes_table_rows.append(
@@ -254,85 +235,29 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
   <h1>{html.escape(player)}</h1>
   {breadcrumbs_html}
   <div class=\"small\">{html.escape(title)}</div>
-  <div class=\"grid\">\n    <div>\n      <h2>Season Totals</h2>\n      {table(metrics_rows)}\n    </div>\n    <div>\n      <h2>Rates (from totals)</h2>\n      {table(rate_rows)}\n    </div>\n  </div>
-  <h2>Season Code Counts</h2>
+  <div class=\"grid\"> 
+    <div>
+      <h2>Totals</h2>
+      {table(metrics_rows)}
+    </div>
+    <div>
+      <h2>Rates (from totals)</h2>
+      {table(rate_rows)}
+    </div>
+  </div>
+  <h2>Code Counts</h2>
   {codes_table}
-  {('<h2>Weekly Pages</h2>' + weekly_links_html) if weekly_links_html else ''}
-  <p class=\"small\">Generated by make_season_dashboard_html.py</p>
+  {build_coach_review(player, totals, rates, code_counts)}
+  <p class=\"small\">Generated by make_dashboard_html.py</p>
 </body>
 </html>
 """
 
 
-def main():
-    ap = argparse.ArgumentParser(description='Generate season HTML dashboards (totals per player) from weekly detailed CSVs')
-    ap.add_argument('--weekly_glob', default='out/Wk*/results_*.csv', help='Glob pattern to weekly detailed CSV files')
-    ap.add_argument('--out_dir', required=True)
-    ap.add_argument('--title', default='Season Player Dashboards')
-    args = ap.parse_args()
-    ga_id = os.environ.get('GA_MEASUREMENT_ID', '').strip()
-    ga_snippet = ''
-    if ga_id:
-        ga_snippet = f"""
-  <script>
-  (function(){{
-    var GA_ID = '{html.escape(ga_id)}';
-    if (navigator.doNotTrack == '1' || window.doNotTrack == '1') return;
-    var s=document.createElement('script'); s.async=1;
-    s.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;
-    document.head.appendChild(s);
-    window.dataLayer=window.dataLayer||[];
-    function gtag(){{dataLayer.push(arguments);}}
-    window.gtag = gtag;
-    gtag('js', new Date());
-    gtag('config', GA_ID, {{ anonymize_ip: true }});
-  }})();
-  </script>
-        """
-
-    csv_paths = sorted(glob.glob(args.weekly_glob))
-    if not csv_paths:
-        raise SystemExit(f"No weekly CSVs found for pattern: {args.weekly_glob}")
-
-    dfs = []
-    for p in csv_paths:
-        try:
-            dfs.append(pd.read_csv(p))
-        except Exception:
-            pass
-    if not dfs:
-        raise SystemExit("No data could be loaded from weekly CSVs")
-
-    df = pd.concat(dfs, ignore_index=True)
-
-    # Optionally collect rush attempt counts from prepared CSVs if available
-    rushes_by_player_week: dict[tuple[str, str], int] = {}
-    try:
-        prep_paths = sorted(glob.glob(str(Path('out') / 'Wk*' / 'Wk*_*_prepared.csv')))
-        for pp in prep_paths:
-            try:
-                dprep = pd.read_csv(pp)
-            except Exception:
-                continue
-            # Find rushes column if present
-            rushes_col = None
-            for c in ['Rushes', 'rushes']:
-                if c in dprep.columns:
-                    rushes_col = c
-                    break
-            if rushes_col is None:
-                continue
-            # Normalize keys
-            if 'player' not in dprep.columns or 'week' not in dprep.columns:
-                continue
-            tmp = dprep.groupby(['player','week'])[rushes_col].sum().reset_index()
-            for _, r2 in tmp.iterrows():
-                key = (str(r2['player']).strip(), str(r2['week']).strip())
-                rushes_by_player_week[key] = rushes_by_player_week.get(key, 0) + int(r2[rushes_col])
-    except Exception:
-        rushes_by_player_week = {}
-    out_dir = Path(args.out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
+def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None, week: str | None, ga_snippet: str):
+    df = pd.read_csv(details_csv)
+    out_dir_p = Path(out_dir)
+    out_dir_p.mkdir(parents=True, exist_ok=True)
 
     players = sorted([cell_text(p) for p in df['player'].astype(str).unique()])
     index_items = []
@@ -342,27 +267,12 @@ def main():
         sub = df[df['player'].astype(str) == player]
         if sub.empty:
             continue
-
         def sum_int(col):
             return int(pd.to_numeric(sub.get(col, 0), errors='coerce').fillna(0).sum())
-
-        snaps = sum_int('snaps')
-        targets = sum_int('targets')
-        catches = sum_int('catches')
-        rec_yards = sum_int('rec_yards')
-        rush_yards = sum_int('rush_yards')
-        touchdowns = sum_int('touchdowns')
-        drops = sum_int('drops')
-        ma = sum_int('missed_assignments')
-        loafs = sum_int('loafs')
+        snaps = sum_int('snaps'); targets = sum_int('targets'); catches = sum_int('catches')
+        rec_yards = sum_int('rec_yards'); rush_yards = sum_int('rush_yards'); touchdowns = sum_int('touchdowns')
+        drops = sum_int('drops'); ma = sum_int('missed_assignments'); loafs = sum_int('loafs')
         code_points = float(pd.to_numeric(sub.get('code_points', 0.0), errors='coerce').fillna(0.0).sum())
-        games = int(sub['week'].nunique()) if 'week' in sub.columns else len(sub.index)
-        # Rush attempts (from prepared files) if available
-        rushes_total = 0
-        if 'week' in sub.columns and rushes_by_player_week:
-            for w in sub['week'].astype(str).tolist():
-                rushes_total += int(rushes_by_player_week.get((player.strip(), str(w).strip()), 0))
-
         catch_rate = safe_div(catches, targets)
         ypt = safe_div((rec_yards + rush_yards), targets)
         tds_per30 = per30(touchdowns, snaps)
@@ -372,104 +282,73 @@ def main():
         drops_rate = safe_div(drops, targets)
         loafs_per30 = per30(loafs, snaps)
         ma_per30 = per30(ma, snaps)
-
         score = float(pd.to_numeric(sub.get('score', 0.0), errors='coerce').fillna(0.0).mean())
         letter_grade = letter(score)
-
-        totals = {
-            'snaps': snaps,
-            'targets': targets,
-            'catches': catches,
-            'rec_yards': rec_yards,
-            'rush_yards': rush_yards,
-            'touchdowns': touchdowns,
-            'drops': drops,
-            'ma': ma,
-            'loafs': loafs,
-            'code_points': code_points,
-            'games': games,
-        }
-        rates = {
-            'catch_rate': catch_rate,
-            'ypt': ypt,
-            'targets_per30': targets_per30,
-            'keyplays_per30': keyplays_per30,
-            'tds_per30': tds_per30,
-            'drops_rate': drops_rate,
-            'ma_per30': ma_per30,
-            'loafs_per30': loafs_per30,
-            'score': score,
-            'grade': letter_grade,
-        }
-
+        totals = {'snaps': snaps,'targets': targets,'catches': catches,'rec_yards': rec_yards,'rush_yards': rush_yards,'touchdowns': touchdowns,'drops': drops,'ma': ma,'loafs': loafs,'code_points': code_points}
+        rates = {'catch_rate': catch_rate,'ypt': ypt,'targets_per30': targets_per30,'keyplays_per30': keyplays_per30,'tds_per30': tds_per30,'drops_rate': drops_rate,'ma_per30': ma_per30,'loafs_per30': loafs_per30,'score': score,'grade': letter_grade}
         codes = collect_code_counts(sub)
-
         player_file = f"{player.strip().replace(' ', '_')}.html"
-        if rushes_total:
-            totals['rushes'] = rushes_total
-        root_index = Path(out_dir).parent.parent / 'index.html'
-        season_index = Path(out_dir) / 'index.html'
+        pdf_rel = None
+        if pdfs_dir and week:
+            pdf_name = f"{player.strip().replace(' ', '_')}_{str(week).strip()}.pdf"
+            pdf_path = Path(pdfs_dir) / pdf_name
+            try:
+                pdf_rel = os.path.relpath(pdf_path, out_dir_p)
+            except Exception:
+                pdf_rel = str(pdf_path)
+        # Nav and breadcrumbs
+        root_index = Path(out_dir_p).parent.parent / 'index.html'
+        week_index = Path(out_dir_p) / 'index.html'
         try:
-            home_rel = os.path.relpath(root_index, out_dir)
-            season_rel = os.path.relpath(season_index, out_dir)
+            home_rel = os.path.relpath(root_index, out_dir_p)
         except Exception:
-            home_rel = '../index.html'
-            season_rel = 'index.html'
-        breadcrumbs = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel)}\">Home</a> &rsaquo; <a href=\"{html.escape(season_rel)}\">Season</a> &rsaquo; <span>{html.escape(player)}</span></div>"
-
-        weekly_rows = []
-        if 'week' in sub.columns:
-            raw_weeks = sub['week'].tolist()
-            week_ints = sorted({int(float(w)) for w in raw_weeks if (not pd.isna(w)) and str(w).strip() != ''})
-            player_file_name = f"{player.strip().replace(' ', '_')}.html"
-            for w_int in week_ints:
-                try:
-                    root = Path(out_dir).parent.parent
-                    wk_dir = root / f"Wk{w_int}"
-                    dash_player = wk_dir / 'dashboards' / player_file_name
-                    dash_index = wk_dir / 'dashboards' / 'index.html'
-                    if dash_player.exists():
-                        dash_target = dash_player
-                    else:
-                        dash_target = dash_index
-                    pdf_path = wk_dir / 'pdfs' / f"{player.strip().replace(' ', '_')}_{w_int}.pdf"
-                    dash_rel = os.path.relpath(dash_target, out_dir)
-                    pdf_rel = os.path.relpath(pdf_path, out_dir) if pdf_path.exists() else ''
-                except Exception:
-                    dash_rel = f"../../Wk{w_int}/dashboards/{player_file_name}"
-                    pdf_rel = f"../../Wk{w_int}/pdfs/{player.strip().replace(' ', '_')}_{w_int}.pdf"
-                pdf_cell = f"<a href=\"{html.escape(pdf_rel)}\">PDF</a>" if pdf_rel else '-'
-                weekly_rows.append(f"<tr><td>Wk{w_int}</td><td><a href=\"{html.escape(dash_rel)}\">Dashboards</a></td><td>{pdf_cell}</td></tr>")
-        weekly_links_html = "<table><tr><th>Week</th><th>Dashboards</th><th>PDF</th></tr>" + ''.join(weekly_rows) + "</table>" if weekly_rows else ''
-
+            home_rel = '../../index.html'
         try:
-            home_rel_nav = os.path.relpath(Path(out_dir).parent.parent / 'index.html', out_dir)
+            week_rel = os.path.relpath(week_index, out_dir_p)
         except Exception:
-            home_rel_nav = '../index.html'
-        nav_html = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel_nav)}\">Home</a> · <a href=\"{html.escape(season_rel)}\">Season</a></div>"
-
-        html_str = render_player_html(player, totals, rates, codes, args.title, breadcrumbs, weekly_links_html, ga_snippet, nav_html)
-        (out_dir / player_file).write_text(html_str, encoding='utf-8')
-        total_yards = rec_yards + rush_yards
-        index_items.append((player, player_file, score, catches, total_yards, drops, touchdowns))
-
+            week_rel = 'index.html'
+        season_index = Path(out_dir_p).parent.parent / 'Season' / 'dashboards' / 'index.html'
+        try:
+            season_rel = os.path.relpath(season_index, out_dir_p)
+        except Exception:
+            season_rel = '../../Season/dashboards/index.html'
+        snapshot_path = Path(out_dir_p).parent / 'snapshot.html'
+        try:
+            snapshot_rel = os.path.relpath(snapshot_path, out_dir_p)
+        except Exception:
+            snapshot_rel = '../snapshot.html'
+        nav_html = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel)}\">Home</a> · <a href=\"{html.escape(week_rel)}\">Week</a> · <a href=\"{html.escape(season_rel)}\">Season</a> · <a href=\"{html.escape(snapshot_rel)}\">Snapshot</a></div>"
+        breadcrumbs = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel)}\">Home</a> &rsaquo; <a href=\"{html.escape(week_rel)}\">Week</a> &rsaquo; <span>{html.escape(player)}</span></div>"
+        html_str = render_player_html(player, totals, rates, codes, title, pdf_rel, breadcrumbs, ga_snippet, week, nav_html)
+        (out_dir_p / player_file).write_text(html_str, encoding='utf-8')
+        index_items.append((player, player_file, score))
     index_items.sort(key=lambda t: t[2], reverse=True)
-    rows = "".join(
-        f"<tr>"
-        f"<td><a href=\"{html.escape(f)}\">{html.escape(p)}</a></td>"
-        f"<td>{c}</td>"
-        f"<td>{y}</td>"
-        f"<td>{d}</td>"
-        f"<td>{td}</td>"
-        f"<td>{s:.1f}</td>"
-        f"</tr>"
-        for p, f, s, c, y, d, td in index_items
-    )
+    rows = "".join(f"<tr><td><a href=\"{html.escape(f)}\">{html.escape(p)}</a></td><td>{s:.1f}</td></tr>" for p, f, s in index_items)
     try:
-        home_rel_idx = os.path.relpath(Path(out_dir).parent.parent / 'index.html', out_dir)
+        home_rel_idx = os.path.relpath(Path(out_dir_p).parent.parent / 'index.html', out_dir_p)
     except Exception:
-        home_rel_idx = '../../index.html'
-    sort_script = """
+        home_rel_idx = '../index.html'
+    index_html = f"""
+<!doctype html>
+<html>
+<head>
+  <meta charset=\"utf-8\" />
+  <title>{html.escape(title)}</title>
+  {ga_snippet}
+  <style>
+    :root {{ --bg:#f5f7fb; --card:#ffffff; --text:#111827; --muted:#6b7280; --primary:#2563eb; --row:#ffffff; --row-alt:#f9fafb; --thead:linear-gradient(135deg,#eef2ff 0%,#e0e7ff 100%); --border:#e5e7eb; }}
+    body {{ font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }}
+    h1 {{ margin-bottom: 12px; font-weight: 700; letter-spacing: -0.01em; }}
+    .breadcrumbs {{ font-size: 12px; color: #666; margin-bottom: 8px; }}
+    .breadcrumbs a {{ color: var(--primary); text-decoration: none; }}
+    .breadcrumbs a:hover {{ text-decoration: underline; }}
+    table {{ width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }}
+    thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; position: sticky; top: 0; z-index: 2; cursor: pointer; }}
+    tbody td {{ padding: 12px 14px; border-top: 1px solid var(--border); }}
+    tbody tr:nth-child(odd) {{ background: var(--row); }}
+    tbody tr:nth-child(even) {{ background: var(--row-alt); }}
+    tbody tr:hover {{ background: #eef2ff; }}
+  </style>
   <script>
     (function(){
       function makeSortable(table){
@@ -498,46 +377,68 @@ def main():
       const t = document.querySelector('table'); if(t) makeSortable(t);
     })();
   </script>
-    """
-    index_html = f"""
-<!doctype html>
-<html>
-<head>
-  <meta charset=\"utf-8\" />
-  <title>{html.escape(args.title)}</title>
-  {ga_snippet}
-  <style>
-    :root {{
-      --bg: #f5f7fb;
-      --card: #ffffff;
-      --text: #111827;
-      --border: #e5e7eb;
-      --thead: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-      --primary: #2563eb;
-    }}
-    body {{ font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }}
-    .breadcrumbs {{ font-size: 12px; color: #666; margin-bottom: 8px; }}
-    .breadcrumbs a {{ color: var(--primary); text-decoration: none; }}
-    .breadcrumbs a:hover {{ text-decoration: underline; }}
-    table {{ width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }}
-    thead th {{ background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; position: sticky; top: 0; z-index: 2; cursor: pointer; }}
-    tbody td {{ padding: 12px 14px; border-top: 1px solid var(--border); }}
-    tbody tr:nth-child(even) {{ background: #f9fafb; }}
-  </style>
 </head>
 <body>
-  <h1>{html.escape(args.title)}</h1>
-  <div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel_idx)}\">Home</a> &rsaquo; <span>Season</span></div>
+  <div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel_idx)}\">Home</a> · <a href=\"../../Season/dashboards/index.html\">Season</a></div>
+  <h1>{html.escape(title)}</h1>
   <table>
-    <thead><tr><th>Player</th><th>Catches</th><th>Yards</th><th>Drops</th><th>TDs</th><th>Avg Score</th></tr></thead>
+    <thead><tr><th>Player</th><th>Avg Score</th></tr></thead>
     <tbody>{rows}</tbody>
   </table>
-  {sort_script}
 </body>
 </html>
 """
-    (out_dir / 'index.html').write_text(index_html, encoding='utf-8')
-    print(f"Wrote season HTML dashboards to {out_dir}")
+    (out_dir_p / 'index.html').write_text(index_html, encoding='utf-8')
+
+
+def main():
+    ap = argparse.ArgumentParser(description='Generate per-player HTML dashboards from detailed CSV or batch via glob')
+    ap.add_argument('--details_csv', help='Weekly detailed results CSV')
+    ap.add_argument('--out_dir', help='Output dashboards dir for weekly mode')
+    ap.add_argument('--title', default='Player Dashboards')
+    ap.add_argument('--pdfs_dir', help='Directory containing per-player PDFs (weekly mode)')
+    ap.add_argument('--week', help='Week number for PDF filenames like Player_8.pdf (weekly mode)')
+    ap.add_argument('--weekly_glob', help='Glob of weekly detailed results CSVs to batch-generate dashboards (CI mode)')
+    args = ap.parse_args()
+
+    ga_id = os.environ.get('GA_MEASUREMENT_ID', '').strip()
+    ga_snippet = ''
+    if ga_id:
+        ga_snippet = f"""
+  <script>
+  (function(){{
+    var GA_ID = '{html.escape(ga_id)}';
+    if (navigator.doNotTrack == '1' || window.doNotTrack == '1') return;
+    var s=document.createElement('script'); s.async=1;
+    s.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;
+    document.head.appendChild(s);
+    window.dataLayer=window.dataLayer||[];
+    function gtag(){{dataLayer.push(arguments);}}
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', GA_ID, {{ anonymize_ip: true }});
+  }})();
+  </script>
+        """
+
+    # Batch mode for CI compatibility
+    if args.weekly_glob and not args.details_csv:
+        paths = sorted(_glob.glob(args.weekly_glob))
+        for p in paths:
+            out_dir = str(Path(p).parent / 'dashboards')
+            # Infer week and pdfs_dir
+            m = _re.search(r"Wk(\d+)", p)
+            week = m.group(1) if m else None
+            pdfs_dir = str((Path(p).parent / 'pdfs'))
+            render_week(p, out_dir, f"Week {week} Player Dashboards" if week else "Player Dashboards", pdfs_dir, week, ga_snippet)
+        print("Batch dashboards generated.")
+        return
+
+    # Weekly mode
+    if not (args.details_csv and args.out_dir):
+        ap.error("In weekly mode, --details_csv and --out_dir are required")
+    render_week(args.details_csv, args.out_dir, args.title, args.pdfs_dir, args.week, ga_snippet)
+    print(f"Wrote HTML dashboards to {args.out_dir}")
 
 
 if __name__ == '__main__':
