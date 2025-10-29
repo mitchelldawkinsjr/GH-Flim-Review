@@ -9,6 +9,7 @@ import glob as _glob
 import re as _re
 import re
 import glob
+from ai_summary_generator import generate_weekly_summary, extract_notes_insights
 
 CODE_LABELS = {
     'TD': 'Touchdown',
@@ -158,7 +159,9 @@ def _extract_note_signals(df_sub: pd.DataFrame) -> dict:
     return signals
 
 
-def build_performance_insights(player: str, totals: dict, code_counts: dict, note_signals: dict | None = None) -> str:
+def build_performance_insights(player: str, totals: dict, code_counts: dict, note_signals: dict | None = None, 
+                             week: str | None = None, opponent: str | None = None, rates: dict | None = None, 
+                             notes: str = "") -> str:
     catches = int(totals.get('catches', 0))
     rec_yards = int(totals.get('rec_yards', 0))
     touchdowns = int(totals.get('touchdowns', 0))
@@ -188,6 +191,14 @@ def build_performance_insights(player: str, totals: dict, code_counts: dict, not
             notes_bits.append('in-breaking route volume')
     notes_text = ("; ".join(notes_bits)) if notes_bits else "route mix inferred from production"
 
+    # Generate AI summary if we have the required data
+    ai_summary = ""
+    if week and opponent and rates:
+        try:
+            ai_summary = generate_weekly_summary(player, int(week), opponent, totals, rates, code_counts, notes)
+        except Exception as e:
+            ai_summary = f"Summary generation error: {str(e)}"
+
     return (
         "<h2>Performance Insights</h2>"
         "<table><tr><th>Insight</th></tr><tr><td>"
@@ -200,6 +211,7 @@ def build_performance_insights(player: str, totals: dict, code_counts: dict, not
         f"<li><strong>Film tags</strong>: {html.escape(notes_text)}.</li>"
         f"</ul>"
         "</td></tr></table>"
+        + (f'<h2>AI Weekly Summary</h2><p style="font-style: italic; line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">{ai_summary}</p>' if ai_summary else '')
     )
 
 
@@ -415,7 +427,8 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
         rates = {'catch_rate': catch_rate,'ypt': ypt,'targets_per30': targets_per30,'keyplays_per30': keyplays_per30,'tds_per30': tds_per30,'drops_rate': drops_rate,'ma_per30': ma_per30,'loafs_per30': loafs_per30,'score': score,'grade': letter_grade}
         codes = collect_code_counts(sub)
         note_signals = _extract_note_signals(sub)
-        insights_html = build_performance_insights(player, totals, codes, note_signals)
+        notes_text = ' '.join([str(x) for x in sub.get('notes', []) if isinstance(x, str)])
+        insights_html = build_performance_insights(player, totals, codes, note_signals, week, opponent, rates, notes_text)
         player_file = f"{player.strip().replace(' ', '_')}.html"
         pdf_rel = None
         if pdfs_dir and week:
