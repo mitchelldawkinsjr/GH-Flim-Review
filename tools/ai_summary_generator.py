@@ -51,36 +51,36 @@ def generate_weekly_summary(player: str, week: int, opponent: str, totals: Dict,
     # Generate summary components
     summary_parts = []
     
-    # Performance overview
-    if score >= 90:
-        performance_desc = "exceptional"
-    elif score >= 80:
-        performance_desc = "strong"
-    elif score >= 70:
+    # Performance overview - adjusted for Division 4 West Michigan HS football
+    if score >= 85:
+        performance_desc = "outstanding"
+    elif score >= 75:
+        performance_desc = "very good"
+    elif score >= 65:
         performance_desc = "solid"
-    elif score >= 60:
-        performance_desc = "below average"
+    elif score >= 55:
+        performance_desc = "inconsistent"
     else:
         performance_desc = "struggling"
     
     summary_parts.append(f"{player} had a {performance_desc} performance against {opponent} with a {grade} grade ({score:.1f}).")
     
-    # Statistical highlights
+    # Statistical highlights - adjusted for Division 4 West Michigan HS football
     if catches > 0:
-        if ypc >= 15:
-            summary_parts.append(f"His {ypc:.1f} yards per catch demonstrates explosive playmaking ability.")
-        elif ypc >= 10:
-            summary_parts.append(f"His {ypc:.1f} yards per catch shows solid production.")
+        if ypc >= 12:
+            summary_parts.append(f"His {ypc:.1f} yards per catch shows good playmaking ability for this level.")
+        elif ypc >= 8:
+            summary_parts.append(f"His {ypc:.1f} yards per catch indicates solid production.")
         else:
-            summary_parts.append(f"His {ypc:.1f} yards per catch indicates short-area/possession work.")
+            summary_parts.append(f"His {ypc:.1f} yards per catch shows short-area/possession work.")
     
     if targets > 0:
-        if catch_rate >= 0.8:
-            summary_parts.append(f"Excellent reliability with {catches}/{targets} catches ({catch_rate:.1%} catch rate).")
-        elif catch_rate >= 0.6:
+        if catch_rate >= 0.75:
+            summary_parts.append(f"Good reliability with {catches}/{targets} catches ({catch_rate:.1%} catch rate).")
+        elif catch_rate >= 0.5:
             summary_parts.append(f"Decent reliability with {catches}/{targets} catches ({catch_rate:.1%} catch rate).")
         else:
-            summary_parts.append(f"Concerning reliability with {catches}/{targets} catches ({catch_rate:.1%} catch rate).")
+            summary_parts.append(f"Needs improvement with {catches}/{targets} catches ({catch_rate:.1%} catch rate).")
     
     # Code-based insights
     if tds > 0:
@@ -176,15 +176,15 @@ def generate_season_summary(player: str, season_data: pd.DataFrame,
     
     summary_parts = []
     
-    # Season overview
-    if avg_score >= 85:
-        performance_desc = "outstanding"
-    elif avg_score >= 75:
-        performance_desc = "excellent"
-    elif avg_score >= 65:
+    # Season overview - adjusted for Division 4 West Michigan HS football
+    if avg_score >= 80:
+        performance_desc = "very good"
+    elif avg_score >= 70:
         performance_desc = "solid"
-    elif avg_score >= 55:
+    elif avg_score >= 60:
         performance_desc = "inconsistent"
+    elif avg_score >= 50:
+        performance_desc = "developing"
     else:
         performance_desc = "struggling"
     
@@ -199,17 +199,17 @@ def generate_season_summary(player: str, season_data: pd.DataFrame,
     # Per-game production
     summary_parts.append(f"His per-game averages: {avg_catches_per_game:.1f} catches, {avg_yards_per_game:.1f} total yards, {avg_targets_per_game:.1f} targets.")
     
-    # Efficiency analysis
-    if season_catch_rate >= 0.8:
-        summary_parts.append(f"Excellent reliability with a {season_catch_rate:.1%} catch rate.")
+    # Efficiency analysis - adjusted for Division 4 West Michigan HS football
+    if season_catch_rate >= 0.75:
+        summary_parts.append(f"Good reliability with a {season_catch_rate:.1%} catch rate.")
     elif season_catch_rate >= 0.6:
         summary_parts.append(f"Solid reliability with a {season_catch_rate:.1%} catch rate.")
     else:
         summary_parts.append(f"Needs improvement with a {season_catch_rate:.1%} catch rate.")
     
-    if season_ypc >= 15:
-        summary_parts.append(f"Explosive playmaker averaging {season_ypc:.1f} yards per catch.")
-    elif season_ypc >= 10:
+    if season_ypc >= 12:
+        summary_parts.append(f"Good playmaker averaging {season_ypc:.1f} yards per catch.")
+    elif season_ypc >= 8:
         summary_parts.append(f"Solid production averaging {season_ypc:.1f} yards per catch.")
     else:
         summary_parts.append(f"Short-area specialist averaging {season_ypc:.1f} yards per catch.")
