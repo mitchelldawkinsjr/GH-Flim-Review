@@ -362,9 +362,6 @@ def main():
         loafs_per30 = per30(loafs, snaps)
         ma_per30 = per30(ma, snaps)
 
-        score = float(pd.to_numeric(sub.get('score', 0.0), errors='coerce').fillna(0.0).mean())
-        letter_grade = letter(score)
-
         totals = {
             'snaps': snaps,
             'targets': targets,
@@ -378,18 +375,6 @@ def main():
             'code_points': code_points,
             'games': games,
         }
-        rates = {
-            'catch_rate': catch_rate,
-            'ypt': ypt,
-            'targets_per30': targets_per30,
-            'keyplays_per30': keyplays_per30,
-            'tds_per30': tds_per30,
-            'drops_rate': drops_rate,
-            'ma_per30': ma_per30,
-            'loafs_per30': loafs_per30,
-            'score': score,
-            'grade': letter_grade,
-        }
 
         codes = collect_code_counts(sub)
         
@@ -402,6 +387,26 @@ def main():
                 score = weekly_data[week_num]
                 weekly_scores.append(float(score))
                 weekly_grades.append(letter(score))
+
+        # Calculate season average from weekly scores (not raw data mean)
+        if weekly_scores:
+            score = sum(weekly_scores) / len(weekly_scores)
+        else:
+            score = float(pd.to_numeric(sub.get('score', 0.0), errors='coerce').fillna(0.0).mean())
+        letter_grade = letter(score)
+        
+        rates = {
+            'catch_rate': catch_rate,
+            'ypt': ypt,
+            'targets_per30': targets_per30,
+            'keyplays_per30': keyplays_per30,
+            'tds_per30': tds_per30,
+            'drops_rate': drops_rate,
+            'ma_per30': ma_per30,
+            'loafs_per30': loafs_per30,
+            'score': score,
+            'grade': letter_grade,
+        }
 
         player_file = f"{player.strip().replace(' ', '_')}.html"
         if rushes_total:
