@@ -211,11 +211,10 @@ def build_performance_insights(player: str, totals: dict, code_counts: dict, not
         f"<li><strong>Film tags</strong>: {html.escape(notes_text)}.</li>"
         f"</ul>"
         "</td></tr></table>"
-        + (f'<h2>AI Weekly Summary</h2><p style="font-style: italic; line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">{ai_summary}</p>' if ai_summary else '')
-    )
+    ), ai_summary
 
 
-def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, pdf_rel: str | None = None, breadcrumbs_html: str = "", ga_snippet: str = "", week_val: str | None = None, nav_html: str = "", insights_html: str = "", opponent: str | None = None) -> str:
+def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, pdf_rel: str | None = None, breadcrumbs_html: str = "", ga_snippet: str = "", week_val: str | None = None, nav_html: str = "", insights_html: str = "", opponent: str | None = None, ai_summary: str = "") -> str:
     css = """
     :root {
       --bg: #f5f7fb;
@@ -337,6 +336,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
       <div class=\"table-wrap\">{table(rate_rows)}</div>
     </div>
   </div>
+  {f'<h2>AI Weekly Summary</h2><p style="font-style: italic; line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">{ai_summary}</p>' if ai_summary else ''}
   <h2>Code Counts</h2>
   <div class=\"table-wrap\">{codes_table}</div>
   {insights_html}
@@ -428,7 +428,7 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
         codes = collect_code_counts(sub)
         note_signals = _extract_note_signals(sub)
         notes_text = ' '.join([str(x) for x in sub.get('notes', []) if isinstance(x, str)])
-        insights_html = build_performance_insights(player, totals, codes, note_signals, week, opponent, rates, notes_text)
+        insights_html, ai_summary = build_performance_insights(player, totals, codes, note_signals, week, opponent, rates, notes_text)
         player_file = f"{player.strip().replace(' ', '_')}.html"
         pdf_rel = None
         if pdfs_dir and week:
@@ -460,7 +460,7 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
             snapshot_rel = '../snapshot.html'
         nav_html = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel)}\">Home</a> · <a href=\"{html.escape(week_rel)}\">Week</a> · <a href=\"{html.escape(season_rel)}\">Season</a> · <a href=\"{html.escape(snapshot_rel)}\">Snapshot</a></div>"
         breadcrumbs = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel)}\">Home</a> &rsaquo; <a href=\"{html.escape(week_rel)}\">Week</a> &rsaquo; <span>{html.escape(player)}</span></div>"
-        html_str = render_player_html(player, totals, rates, codes, title, pdf_rel, breadcrumbs, ga_snippet, week, nav_html, insights_html, opponent)
+        html_str = render_player_html(player, totals, rates, codes, title, pdf_rel, breadcrumbs, ga_snippet, week, nav_html, insights_html, opponent, ai_summary)
         (out_dir_p / player_file).write_text(html_str, encoding='utf-8')
         total_yards = rec_yards + rush_yards
         index_items.append((player, player_file, score, letter_grade, catches, total_yards, drops, touchdowns, (pdf_rel or '')))
