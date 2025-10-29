@@ -162,7 +162,7 @@ def generate_season_summary(player: str, season_data: pd.DataFrame,
     
     # Calculate averages
     avg_score = sum(weekly_scores) / len(weekly_scores) if weekly_scores else 0
-    games_played = len(season_data)
+    games_played = len(weekly_scores) if weekly_scores else len(season_data['week'].unique()) if 'week' in season_data.columns else len(season_data)
     
     # Calculate rates
     season_catch_rate = (total_catches / (total_catches + total_drops)) if (total_catches + total_drops) > 0 else 0
