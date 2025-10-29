@@ -57,7 +57,7 @@ def generate_weekly_summary(player: str, week: int, opponent: str, totals: Dict,
     elif score >= 85:
         performance_desc = "excellent"
     elif score >= 75:
-        performance_desc = "very good"
+        performance_desc = "good"
     elif score >= 65:
         performance_desc = "solid"
     elif score >= 55:
@@ -184,7 +184,7 @@ def generate_season_summary(player: str, season_data: pd.DataFrame,
     elif avg_score >= 80:
         performance_desc = "excellent"
     elif avg_score >= 70:
-        performance_desc = "very good"
+        performance_desc = "good"
     elif avg_score >= 60:
         performance_desc = "solid"
     elif avg_score >= 50:
