@@ -7,6 +7,8 @@ import pandas as pd
 import html
 import glob as _glob
 import re as _re
+import re
+import glob
 
 CODE_LABELS = {
     'TD': 'Touchdown',
@@ -338,6 +340,23 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
     df = pd.read_csv(details_csv)
     out_dir_p = Path(out_dir)
     out_dir_p.mkdir(parents=True, exist_ok=True)
+    
+    # Auto-extract opponent from CSV filename if not provided
+    if not opponent:
+        csv_path = Path(details_csv)
+        stem = csv_path.stem  # e.g., results_Wk8_Kville
+        m = re.search(r'results_Wk\d+_(.+)$', stem)
+        if m:
+            opponent = m.group(1)
+        else:
+            # Fallback: try prepared CSV pattern
+            parent_dir = csv_path.parent
+            prep_files = sorted(glob.glob(str(parent_dir / 'Wk*_*_prepared.csv')))
+            if prep_files:
+                prep_stem = Path(prep_files[0]).stem  # e.g., Wk8_Kville_prepared
+                m = re.search(r'Wk\d+_(.+)_prepared$', prep_stem)
+                if m:
+                    opponent = m.group(1)
 
     players = sorted([cell_text(p) for p in df['player'].astype(str).unique()])
     index_items = []
