@@ -144,6 +144,7 @@ def main():
         '--details_csv', str(results_csv),
         '--out_dir', str(dashboards_html_dir),
         '--title', f"Week {week} Player Dashboards",
+        '--opponent', opp,
         '--pdfs_dir', str(out_dir / 'pdfs'),
         '--week', str(week)
     ], check=True)

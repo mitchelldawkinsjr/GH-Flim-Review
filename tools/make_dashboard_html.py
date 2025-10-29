@@ -201,7 +201,7 @@ def build_performance_insights(player: str, totals: dict, code_counts: dict, not
     )
 
 
-def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, pdf_rel: str | None = None, breadcrumbs_html: str = "", ga_snippet: str = "", week_val: str | None = None, nav_html: str = "", insights_html: str = "") -> str:
+def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict, title: str, pdf_rel: str | None = None, breadcrumbs_html: str = "", ga_snippet: str = "", week_val: str | None = None, nav_html: str = "", insights_html: str = "", opponent: str | None = None) -> str:
     css = """
     :root {
       --bg: #f5f7fb;
@@ -302,7 +302,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
 <html>
 <head>
   <meta charset=\"utf-8\" />
-  <title>{html.escape(title)} — {html.escape(player)}</title>
+  <title>{html.escape(f"Week {week_val} vs {opponent} - {player}" if week_val and opponent else f"{title} — {player}")}</title>
   {ga_snippet}
   <style>{css}</style>
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
@@ -312,7 +312,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
   {nav_html}
   <h1>{html.escape(player)}</h1>
   {breadcrumbs_html}
-  <div class=\"small\">{html.escape(title)}</div>
+  <div class=\"small\">{html.escape(f"Week {week_val} vs {opponent}" if week_val and opponent else title)}</div>
   <div class=\"grid\"> 
     <div>
       <h2>Totals</h2>
@@ -334,7 +334,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
 """
 
 
-def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None, week: str | None, ga_snippet: str):
+def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None, week: str | None, ga_snippet: str, opponent: str | None = None):
     df = pd.read_csv(details_csv)
     out_dir_p = Path(out_dir)
     out_dir_p.mkdir(parents=True, exist_ok=True)
@@ -428,7 +428,7 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
             snapshot_rel = '../snapshot.html'
         nav_html = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel)}\">Home</a> · <a href=\"{html.escape(week_rel)}\">Week</a> · <a href=\"{html.escape(season_rel)}\">Season</a> · <a href=\"{html.escape(snapshot_rel)}\">Snapshot</a></div>"
         breadcrumbs = f"<div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel)}\">Home</a> &rsaquo; <a href=\"{html.escape(week_rel)}\">Week</a> &rsaquo; <span>{html.escape(player)}</span></div>"
-        html_str = render_player_html(player, totals, rates, codes, title, pdf_rel, breadcrumbs, ga_snippet, week, nav_html, insights_html)
+        html_str = render_player_html(player, totals, rates, codes, title, pdf_rel, breadcrumbs, ga_snippet, week, nav_html, insights_html, opponent)
         (out_dir_p / player_file).write_text(html_str, encoding='utf-8')
         total_yards = rec_yards + rush_yards
         index_items.append((player, player_file, score, letter_grade, catches, total_yards, drops, touchdowns, (pdf_rel or '')))
@@ -442,6 +442,7 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
         f"<td class=\"num\">{y}</td>"
         f"<td class=\"num\">{d}</td>"
         f"<td class=\"num\">{td}</td>"
+        f"<td>{html.escape(opponent) if opponent else '-'}</td>"
         f"<td><a href=\"{html.escape(f)}#pdf\">PDF</a></td>"
         f"</tr>"
         for p, f, s, l, c, y, d, td, pdf in index_items
@@ -466,8 +467,14 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
             f"<td class=\"num\"><strong>{total_drops}</strong></td>"
             f"<td class=\"num\"><strong>{total_tds}</strong></td>"
             f"<td>-</td>"
+            f"<td>-</td>"
             f"</tr>"
         )
+    # Update title to include opponent if available
+    display_title = title
+    if opponent:
+        display_title = f"Week {week} vs {opponent} - Player Dashboards" if week else f"vs {opponent} - Player Dashboards"
+    
     try:
         home_rel_idx = os.path.relpath(Path(out_dir_p).parent.parent / 'index.html', out_dir_p)
     except Exception:
@@ -528,7 +535,7 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
 <html>
 <head>
   <meta charset=\"utf-8\" />
-  <title>{html.escape(title)}</title>
+  <title>{html.escape(display_title)}</title>
   {ga_snippet}
   <style>
     :root {{ --bg:#f5f7fb; --card:#ffffff; --text:#111827; --muted:#6b7280; --primary:#2563eb; --row:#ffffff; --row-alt:#f9fafb; --thead:linear-gradient(135deg,#eef2ff 0%,#e0e7ff 100%); --border:#e5e7eb; }}
@@ -552,12 +559,12 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
 </head>
 <body>
   <div class=\"breadcrumbs\"><a href=\"{html.escape(home_rel_idx)}\">Home</a> · <a href=\"../../Season/dashboards/index.html\">Season</a></div>
-  <h1>{html.escape(title)}</h1>
+  <h1>{html.escape(display_title)}</h1>
   <div class=\"small\"><a href=\"{html.escape(csv_rel)}\">Download details CSV</a></div>
   <div style=\"margin:8px 0 12px\"><input id=\"playerFilter\" type=\"search\" placeholder=\"Filter players...\" style=\"padding:8px 10px;border:1px solid var(--border);border-radius:8px;width:240px;\"></div>
   <div class=\"table-wrap\">
     <table>
-      <thead><tr><th>Player</th><th>Letter</th><th>Avg Score</th><th>Catches</th><th>Yards</th><th>Drops</th><th>TDs</th><th>PDF</th></tr></thead>
+      <thead><tr><th>Player</th><th>Letter</th><th>Avg Score</th><th>Catches</th><th>Yards</th><th>Drops</th><th>TDs</th><th>Opponent</th><th>PDF</th></tr></thead>
       <tbody>{rows}{totals_row}</tbody>
     </table>
   </div>
@@ -573,6 +580,7 @@ def main():
     ap.add_argument('--details_csv', help='Weekly detailed results CSV')
     ap.add_argument('--out_dir', help='Output dashboards dir for weekly mode')
     ap.add_argument('--title', default='Player Dashboards')
+    ap.add_argument('--opponent', help='Opponent name for title and display')
     ap.add_argument('--pdfs_dir', help='Directory containing per-player PDFs (weekly mode)')
     ap.add_argument('--week', help='Week number for PDF filenames like Player_8.pdf (weekly mode)')
     ap.add_argument('--weekly_glob', help='Glob of weekly detailed results CSVs to batch-generate dashboards (CI mode)')
@@ -611,7 +619,7 @@ def main():
 
     if not (args.details_csv and args.out_dir):
         ap.error("In weekly mode, --details_csv and --out_dir are required")
-    render_week(args.details_csv, args.out_dir, args.title, args.pdfs_dir, args.week, ga_snippet)
+    render_week(args.details_csv, args.out_dir, args.title, args.pdfs_dir, args.week, ga_snippet, args.opponent)
     print(f"Wrote HTML dashboards to {args.out_dir}")
 
 
