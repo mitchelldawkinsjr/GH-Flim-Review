@@ -52,8 +52,10 @@ def generate_weekly_summary(player: str, week: int, opponent: str, totals: Dict,
     summary_parts = []
     
     # Performance overview - adjusted for Division 4 West Michigan HS football
-    if score >= 85:
+    if score >= 95:
         performance_desc = "outstanding"
+    elif score >= 85:
+        performance_desc = "excellent"
     elif score >= 75:
         performance_desc = "very good"
     elif score >= 65:
@@ -177,12 +179,14 @@ def generate_season_summary(player: str, season_data: pd.DataFrame,
     summary_parts = []
     
     # Season overview - adjusted for Division 4 West Michigan HS football
-    if avg_score >= 80:
-        performance_desc = "very good"
+    if avg_score >= 90:
+        performance_desc = "outstanding"
+    elif avg_score >= 80:
+        performance_desc = "excellent"
     elif avg_score >= 70:
-        performance_desc = "solid"
+        performance_desc = "very good"
     elif avg_score >= 60:
-        performance_desc = "inconsistent"
+        performance_desc = "solid"
     elif avg_score >= 50:
         performance_desc = "developing"
     else:
