@@ -68,18 +68,20 @@ def main():
     ap = argparse.ArgumentParser(description="Run weekly film workflow end-to-end.")
     ap.add_argument('--week', type=int, required=True, help='Week number, e.g., 8')
     ap.add_argument('--opponent', required=True, help='Opponent short name, e.g., Kville')
+    ap.add_argument('--season', default='2025-2026', help='Season identifier (default: 2025-2026)')
     ap.add_argument('--csv', help='Override input CSV path')
-    ap.add_argument('--out_dir', help='Output directory (default: out/Wk<week>)')
+    ap.add_argument('--out_dir', help='Output directory (default: out/{season}/Wk<week>)')
     ap.add_argument('--python', dest='python_bin', help='Python binary to use (default: ./venv/bin/python or current)')
     args = ap.parse_args()
 
     week = int(args.week)
     opp = str(args.opponent)
+    season = str(args.season)
 
     project_root = Path(__file__).resolve().parents[1]
     csv_path = find_csv(week, opp, args.csv)
 
-    out_dir = Path(args.out_dir) if args.out_dir else project_root / 'out' / f"Wk{week}"
+    out_dir = Path(args.out_dir) if args.out_dir else project_root / 'out' / season / f"Wk{week}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     python_bin = pick_python_bin(args.python_bin)
@@ -158,23 +160,31 @@ def main():
         '--out', str(snapshot_html)
     ], check=True)
 
-    # Season dashboards (aggregate across out/Wk*/results_*.csv)
-    season_dir = project_root / 'out' / 'Season' / 'dashboards'
+    # Season dashboards (aggregate across out/{season}/Wk*/results_*.csv)
+    season_dir = project_root / 'out' / season / 'Season' / 'dashboards'
     season_dir.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run([
         python_bin, str(project_root / 'tools' / 'make_season_dashboard_html.py'),
-        '--weekly_glob', str(project_root / 'out' / 'Wk*' / 'results_*.csv'),
+        '--weekly_glob', str(project_root / 'out' / season / 'Wk*' / 'results_*.csv'),
         '--out_dir', str(season_dir),
         '--title', 'Season Player Dashboards'
     ], check=True)
     print(f"  Season Dashboards HTML: {season_dir}/index.html")
 
-    # Update site landing index
+    # Update site landing index for this season
     subprocess.run([
         python_bin, str(project_root / 'tools' / 'make_site_index.py'),
+        '--out_root', str(project_root / 'out'),
+        '--season', season
+    ], check=True)
+    print(f"  Site Index: {project_root / 'out' / season / 'index.html'}")
+    
+    # Update root season selector
+    subprocess.run([
+        python_bin, str(project_root / 'tools' / 'make_season_selector.py'),
         '--out_root', str(project_root / 'out')
     ], check=True)
-    print(f"  Site Index: {project_root / 'out' / 'index.html'}")
+    print(f"  Season Selector: {project_root / 'out' / 'index.html'}")
 
 
 if __name__ == '__main__':

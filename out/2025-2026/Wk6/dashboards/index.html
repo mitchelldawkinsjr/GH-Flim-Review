@@ -1,0 +1,91 @@
+
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Week 6/ vs Holland - Player Dashboards</title>
+  
+  <style>
+    :root { --bg:#f5f7fb; --card:#ffffff; --text:#111827; --muted:#6b7280; --primary:#2563eb; --row:#ffffff; --row-alt:#f9fafb; --thead:linear-gradient(135deg,#eef2ff 0%,#e0e7ff 100%); --border:#e5e7eb; }
+    body { font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; background: var(--bg); color: var(--text); }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { margin-bottom: 12px; font-weight: 700; letter-spacing: -0.01em; }
+    .breadcrumbs { font-size: 12px; color: #666; margin-bottom: 8px; }
+    .breadcrumbs a { color: var(--primary); text-decoration: none; }
+    .breadcrumbs a:hover { text-decoration: underline; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+    thead th { background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; position: sticky; top: 0; z-index: 2; cursor: pointer; }
+    thead th[data-sort="asc"]::after { content: " B2"; font-size: 10px; color: #6b7280; }
+    thead th[data-sort="desc"]::after { content: " BC"; font-size: 10px; color: #6b7280; }
+    tbody td { padding: 12px 14px; border-top: 1px solid var(--border); }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tbody tr:nth-child(odd) { background: var(--row); }
+    tbody tr:nth-child(even) { background: var(--row-alt); }
+    tbody tr:hover { background: #eef2ff; }
+  </style>
+  
+  <script>
+    (function(){
+      function makeSortable(table){
+        const ths = table.querySelectorAll('thead th');
+        ths.forEach((th, idx) => {
+          th.addEventListener('click', () => {
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const asc = th.getAttribute('data-sort') !== 'asc';
+            rows.sort((a,b) => {
+              const ta = a.children[idx].innerText.trim();
+              const tb = b.children[idx].innerText.trim();
+              const na = parseFloat(ta.replace(/[^0-9.-]/g,''));
+              const nb = parseFloat(tb.replace(/[^0-9.-]/g,''));
+              const bothNum = !isNaN(na) && !isNaN(nb);
+              let cmp = 0;
+              if(bothNum){ cmp = na - nb; } else { cmp = ta.localeCompare(tb); }
+              return asc ? cmp : -cmp;
+            });
+            ths.forEach(h=>h.removeAttribute('data-sort'));
+            th.setAttribute('data-sort', asc ? 'asc':'desc');
+            rows.forEach(r=>tbody.appendChild(r));
+          });
+        });
+      }
+      const t = document.querySelector('table'); if(t) makeSortable(t);
+    })();
+  </script>
+    
+  
+  <script>
+    (function(){
+      const input = document.getElementById('playerFilter');
+      if(!input) return;
+      input.addEventListener('input', function(){
+        const q = this.value.trim().toLowerCase();
+        const rows = Array.from(document.querySelectorAll('tbody tr'));
+        rows.forEach(function(r){
+          const name = (r.children[0] && r.children[0].innerText ? r.children[0].innerText : '').toLowerCase();
+          r.style.display = name.indexOf(q) !== -1 ? '' : 'none';
+        });
+      });
+    })();
+  </script>
+    
+</head>
+<body>
+  <div class="container">
+    <div class="breadcrumbs"><a href="../../../index.html">Home</a> · <a href="../../index.html">Season</a> · <a href="../../Season/dashboards/index.html">Season Dashboards</a></div>
+    <h1>Week 6/ vs Holland - Player Dashboards</h1>
+    <div class="small"><a href="../results_Wk6_Holland.csv">Download details CSV</a></div>
+    <div style="margin:8px 0 12px"><input id="playerFilter" type="search" placeholder="Filter players..." style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;width:240px;"></div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Player</th><th>Letter</th><th>Avg Score</th><th>Catches</th><th>Rec Yards</th><th>Rush Yards</th><th>Drops</th><th>TDs</th><th>Opponent</th><th>PDF</th></tr></thead>
+      <tbody><tr><td><a href="Aiden.html" onclick="if(window.gtag){gtag('event','open_week_player',{event_category:'navigation',player:'Aiden',week:'6/'});}">Aiden</a></td><td>A</td><td class="num">100.0</td><td class="num">5</td><td class="num">59</td><td class="num">5</td><td class="num">0</td><td class="num">1</td><td>Holland</td><td><a href="Aiden.html#pdf">PDF</a></td></tr><tr><td><a href="Taj.html" onclick="if(window.gtag){gtag('event','open_week_player',{event_category:'navigation',player:'Taj',week:'6/'});}">Taj</a></td><td>A</td><td class="num">100.0</td><td class="num">1</td><td class="num">5</td><td class="num">31</td><td class="num">0</td><td class="num">1</td><td>Holland</td><td><a href="Taj.html#pdf">PDF</a></td></tr><tr><td><a href="Zay.html" onclick="if(window.gtag){gtag('event','open_week_player',{event_category:'navigation',player:'Zay',week:'6/'});}">Zay</a></td><td>B</td><td class="num">86.3</td><td class="num">7</td><td class="num">125</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>Holland</td><td><a href="Zay.html#pdf">PDF</a></td></tr><tr><td><a href="Ju.html" onclick="if(window.gtag){gtag('event','open_week_player',{event_category:'navigation',player:'Ju',week:'6/'});}">Ju</a></td><td>B</td><td class="num">85.0</td><td class="num">0</td><td class="num">0</td><td class="num">187</td><td class="num">0</td><td class="num">2</td><td>Holland</td><td><a href="Ju.html#pdf">PDF</a></td></tr><tr><td><a href="Res.html" onclick="if(window.gtag){gtag('event','open_week_player',{event_category:'navigation',player:'Res',week:'6/'});}">Res</a></td><td>B</td><td class="num">85.0</td><td class="num">0</td><td class="num">0</td><td class="num">71</td><td class="num">0</td><td class="num">2</td><td>Holland</td><td><a href="Res.html#pdf">PDF</a></td></tr><tr><td><a href="Braiden.html" onclick="if(window.gtag){gtag('event','open_week_player',{event_category:'navigation',player:'Braiden',week:'6/'});}">Braiden</a></td><td>B</td><td class="num">81.0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>Holland</td><td><a href="Braiden.html#pdf">PDF</a></td></tr><tr><td><a href="Martise.html" onclick="if(window.gtag){gtag('event','open_week_player',{event_category:'navigation',player:'Martise',week:'6/'});}">Martise</a></td><td>B</td><td class="num">80.4</td><td class="num">1</td><td class="num">4</td><td class="num">12</td><td class="num">3</td><td class="num">0</td><td>Holland</td><td><a href="Martise.html#pdf">PDF</a></td></tr><tr><td><a href="Jakari.html" onclick="if(window.gtag){gtag('event','open_week_player',{event_category:'navigation',player:'Jakari',week:'6/'});}">Jakari</a></td><td>C</td><td class="num">74.6</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>Holland</td><td><a href="Jakari.html#pdf">PDF</a></td></tr><tr><td><a href="Benard.html" onclick="if(window.gtag){gtag('event','open_week_player',{event_category:'navigation',player:'Benard',week:'6/'});}">Benard</a></td><td>C</td><td class="num">73.0</td><td class="num">0</td><td class="num">0</td><td class="num">10</td><td class="num">0</td><td class="num">0</td><td>Holland</td><td><a href="Benard.html#pdf">PDF</a></td></tr><tr><td><a href="Chrisitan.html" onclick="if(window.gtag){gtag('event','open_week_player',{event_category:'navigation',player:'Chrisitan',week:'6/'});}">Chrisitan</a></td><td>C</td><td class="num">73.0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>Holland</td><td><a href="Chrisitan.html#pdf">PDF</a></td></tr><tr><td><a href="Khy.html" onclick="if(window.gtag){gtag('event','open_week_player',{event_category:'navigation',player:'Khy',week:'6/'});}">Khy</a></td><td>C</td><td class="num">73.0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>Holland</td><td><a href="Khy.html#pdf">PDF</a></td></tr><tr><td><strong>Totals</strong></td><td>-</td><td class="num"><strong>82.8</strong></td><td class="num"><strong>14</strong></td><td class="num"><strong>193</strong></td><td class="num"><strong>316</strong></td><td class="num"><strong>3</strong></td><td class="num"><strong>6</strong></td><td>-</td><td>-</td></tr></tbody>
+    </table>
+  </div>
+  <p class="small" style="margin-top:8px">Updated at 2025-12-17 14:25</p>
+  </div>
+</body>
+</html>

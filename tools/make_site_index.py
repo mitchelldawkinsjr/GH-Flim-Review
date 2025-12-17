@@ -8,11 +8,12 @@ import os
 
 
 def main():
-    ap = argparse.ArgumentParser(description='Generate a landing index at out/index.html')
+    ap = argparse.ArgumentParser(description='Generate a landing index at out/{season}/index.html')
     ap.add_argument('--out_root', default='out', help='Root output directory (default: out)')
+    ap.add_argument('--season', required=True, help='Season identifier (e.g., 2025-2026)')
     args = ap.parse_args()
 
-    out_root = Path(args.out_root)
+    out_root = Path(args.out_root) / args.season
     out_root.mkdir(parents=True, exist_ok=True)
 
     # Season dashboard
@@ -128,7 +129,11 @@ def main():
       --thead: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
       --border: #e5e7eb;
     }
-    body { font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }
+    body { font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; background: var(--bg); color: var(--text); }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
     h1 { margin-bottom: 12px; font-weight: 700; letter-spacing: -0.01em; }
     .section { margin-top: 24px; }
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
@@ -159,43 +164,45 @@ def main():
   {sort_script}
 </head>
 <body>
-  <div class=\"breadcrumbs\"><a href=\"index.html\">Home</a> · <a href=\"{html.escape(rel(season_index))}\">Season</a></div>
-  <h1>Film Review Hub</h1>
+  <div class=\"container\">
+    <div class=\"breadcrumbs\"><a href=\"../../index.html\">Home</a> · <a href=\"{html.escape(rel(season_index))}\">Season</a></div>
+    <h1>Film Review Hub - {html.escape(args.season)} Season</h1>
 
-  <div class=\"cards\">
-    <div class=\"card\">
-      <div><b>Season Dashboards</b></div>
-      <div class=\"muted\">Totals & rates per player</div>
-      <div style=\"margin-top:8px\"><a href=\"{html.escape(rel(season_index))}\" onclick=\"if(window.gtag){{gtag('event','open_season_dash',{{event_category:'navigation'}});}}\">Open</a></div>
+    <div class=\"cards\">
+      <div class=\"card\">
+        <div><b>Season Dashboards</b></div>
+        <div class=\"muted\">Totals & rates per player</div>
+        <div style=\"margin-top:8px\"><a href=\"{html.escape(rel(season_index))}\" onclick=\"if(window.gtag){{gtag('event','open_season_dash',{{event_category:'navigation'}});}}\">Open</a></div>
+      </div>
     </div>
-  </div>
 
-  <div class=\"section\" style=\"margin-top:18px\">
-    <details>
-      <summary><b>How to score well</b></summary>
-      <ul>
-        <li><b>Relentless effort every rep</b>: finish full speed, strain on blocks (earn Relentless Effort, avoid Loaf/Not Full Speed).</li>
-        <li><b>Master your assignment</b>: split, depth, route landmark, adjust vs coverage (avoid Missed Assignment).</li>
-        <li><b>Elite, crisp routes</b>: full depth, explode out, hold leverage (earn Elite Route/Good Route, avoid Bad Route).</li>
-        <li><b>Win the ball</b>: eyes-to-tuck, high-point, squeeze through contact (earn Spectacular Catch, avoid Dropped Pass).</li>
-        <li><b>Add yards and chains</b>: fight through contact; Catch/Rush yardage = +0.5 per yard; Broken Tackle(s) +1.0/bt; First Downs +5.</li>
-        <li><b>Dominate run game</b>: position + hand fit + run feet (Good Block +2, Pancake +10).</li>
-        <li><b>Finish drives</b>: Touchdowns are +15; red-zone detail matters.</li>
-      </ul>
-      <div class=\"muted\">Key Play Points Rubric: Touchdown +15, Relentless Effort +5, Elite Route +7, Good Route +2, Catch/Rush yardage +0.5/yd, Broken Tackle(s) +1.0/bt, Good Block +2, Pancake +10, First Down +5, Spectacular Catch +10; Missed Assignment -10, Dropped Pass -15, Bad Route -2, Loaf (Laziness) -2, Not Full Speed -3, Whiffed -1, Holding 0.</div>
-    </details>
-  </div>
-  <div class="section">
-    <h2>Weeks</h2>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Week</th><th>Opponent</th><th>Weekly Dashboards</th><th>Snapshot</th><th>Summary</th><th>Group Film</th><th>CSVs</th></tr></thead>
-        <tbody>{''.join(weeks_rows)}</tbody>
-      </table>
+    <div class=\"section\" style=\"margin-top:18px\">
+      <details>
+        <summary><b>How to score well</b></summary>
+        <ul>
+          <li><b>Relentless effort every rep</b>: finish full speed, strain on blocks (earn Relentless Effort, avoid Loaf/Not Full Speed).</li>
+          <li><b>Master your assignment</b>: split, depth, route landmark, adjust vs coverage (avoid Missed Assignment).</li>
+          <li><b>Elite, crisp routes</b>: full depth, explode out, hold leverage (earn Elite Route/Good Route, avoid Bad Route).</li>
+          <li><b>Win the ball</b>: eyes-to-tuck, high-point, squeeze through contact (earn Spectacular Catch, avoid Dropped Pass).</li>
+          <li><b>Add yards and chains</b>: fight through contact; Catch/Rush yardage = +0.5 per yard; Broken Tackle(s) +1.0/bt; First Downs +5.</li>
+          <li><b>Dominate run game</b>: position + hand fit + run feet (Good Block +2, Pancake +10).</li>
+          <li><b>Finish drives</b>: Touchdowns are +15; red-zone detail matters.</li>
+        </ul>
+        <div class=\"muted\">Key Play Points Rubric: Touchdown +15, Relentless Effort +5, Elite Route +7, Good Route +2, Catch/Rush yardage +0.5/yd, Broken Tackle(s) +1.0/bt, Good Block +2, Pancake +10, First Down +5, Spectacular Catch +10; Missed Assignment -10, Dropped Pass -15, Bad Route -2, Loaf (Laziness) -2, Not Full Speed -3, Whiffed -1, Holding 0.</div>
+      </details>
     </div>
-  </div>
+    <div class="section">
+      <h2>Weeks</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Week</th><th>Opponent</th><th>Weekly Dashboards</th><th>Snapshot</th><th>Summary</th><th>Group Film</th><th>CSVs</th></tr></thead>
+          <tbody>{''.join(weeks_rows)}</tbody>
+        </table>
+      </div>
+    </div>
 
-  <p class=\"muted\">Generated by make_site_index.py</p>
+    <p class=\"muted\">Generated by make_site_index.py</p>
+  </div>
 </body>
 </html>
 """

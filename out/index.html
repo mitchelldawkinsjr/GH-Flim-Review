@@ -3,7 +3,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Film Review Hub</title>
+  <title>Film Review Hub - Select Season</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   
   <style>
@@ -13,97 +13,140 @@
       --text: #111827;
       --muted: #6b7280;
       --primary: #2563eb;
-      --row: #ffffff;
-      --row-alt: #f9fafb;
-      --thead: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
       --border: #e5e7eb;
+      --gold: #fbbf24;
+      --silver: #9ca3af;
+      --bronze: #cd7f32;
     }
-    body { font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }
-    h1 { margin-bottom: 12px; font-weight: 700; letter-spacing: -0.01em; }
-    .section { margin-top: 24px; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .muted { color: var(--muted); font-size: 12px; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
-    thead th { background: var(--thead); color: #111827; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; padding: 12px 14px; text-align: left; position: sticky; top: 0; z-index: 2; cursor: pointer; }
-    tbody td { padding: 12px 14px; border-top: 1px solid var(--border); }
-    tbody tr:nth-child(odd) { background: var(--row); }
-    tbody tr:nth-child(even) { background: var(--row-alt); }
-    tbody tr:hover { background: #eef2ff; }
-    a { color: var(--primary); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    details summary { cursor: pointer; }
-    @media (max-width: 640px) { body { margin: 14px; } thead th, tbody td { padding: 10px 12px; } }
-    </style>
-  
-  <script>
-    (function(){
-      function makeSortable(table){
-        const ths = table.querySelectorAll('thead th');
-        ths.forEach((th, idx) => {
-          th.addEventListener('click', () => {
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            const asc = th.getAttribute('data-sort') !== 'asc';
-            rows.sort((a,b) => {
-              const ta = a.children[idx].innerText.trim();
-              const tb = b.children[idx].innerText.trim();
-              const na = parseFloat(ta.replace(/[^0-9.-]/g,''));
-              const nb = parseFloat(tb.replace(/[^0-9.-]/g,''));
-              const bothNum = !isNaN(na) && !isNaN(nb);
-              let cmp = 0;
-              if(bothNum){ cmp = na - nb; } else { cmp = ta.localeCompare(tb); }
-              return asc ? cmp : -cmp;
-            });
-            ths.forEach(h=>h.removeAttribute('data-sort'));
-            th.setAttribute('data-sort', asc ? 'asc':'desc');
-            rows.forEach(r=>tbody.appendChild(r));
-          });
-        });
+    body { 
+      font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; 
+      margin: 0;
+      padding: 20px;
+      background: var(--bg); 
+      color: var(--text); 
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { 
+      margin-bottom: 24px; 
+      font-weight: 700; 
+      letter-spacing: -0.01em; 
+      font-size: 32px;
+    }
+    .seasons-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+      gap: 20px; 
+      margin-top: 24px;
+    }
+    .season-card { 
+      background: var(--card); 
+      border: 1px solid var(--border); 
+      border-radius: 16px; 
+      padding: 20px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .season-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .season-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--primary);
+    }
+    .season-title a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .season-title a:hover {
+      text-decoration: underline;
+    }
+    .top-wrs {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .top-wrs-title {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .wr-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      font-size: 15px;
+    }
+    .wr-rank {
+      font-weight: 700;
+      min-width: 40px;
+      font-size: 16px;
+    }
+    .wr-rank.rank-1 { color: var(--gold); }
+    .wr-rank.rank-2 { color: var(--silver); }
+    .wr-rank.rank-3 { color: var(--bronze); }
+    .wr-rank.rank-4, .wr-rank.rank-5 { color: var(--muted); }
+    .wr-name {
+      flex: 1;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .wr-grade {
+      color: var(--muted);
+      font-size: 14px;
+      margin-left: 8px;
+    }
+    .wr-score {
+      color: var(--text);
+      font-weight: 600;
+      margin-left: auto;
+    }
+    .no-data {
+      color: var(--muted);
+      font-style: italic;
+      font-size: 14px;
+    }
+    @media (max-width: 640px) { 
+      body { margin: 14px; }
+      .seasons-grid {
+        grid-template-columns: 1fr;
       }
-      const t = document.querySelector('table'); if(t) makeSortable(t);
-    })();
-  </script>
-    
+      h1 {
+        font-size: 28px;
+      }
+    }
+    </style>
 </head>
 <body>
-  <div class="breadcrumbs"><a href="index.html">Home</a> · <a href="Season/dashboards/index.html">Season</a></div>
-  <h1>Film Review Hub</h1>
-
-  <div class="cards">
-    <div class="card">
-      <div><b>Season Dashboards</b></div>
-      <div class="muted">Totals & rates per player</div>
-      <div style="margin-top:8px"><a href="Season/dashboards/index.html" onclick="if(window.gtag){gtag('event','open_season_dash',{event_category:'navigation'});}">Open</a></div>
+  <div class="container">
+    <h1>Film Review Hub</h1>
+    <p style="color: var(--muted); margin-bottom: 8px;">Select a season to view player dashboards, weekly reports, and statistics.</p>
+    
+    <div class="seasons-grid">
+      
+    <div class="season-card">
+      <div class="season-title">
+        <a href="2025-2026/index.html" onclick="if(window.gtag){gtag('event','select_season',{event_category:'navigation',season:'2025-2026'});}">
+          2025-2026 Season
+        </a>
+      </div>
+      <div class="top-wrs">
+        <div class="top-wrs-title">Top 5 Wide Receivers</div>
+        <div class="wr-item"><span class="wr-rank rank-1">#1</span><span class="wr-name">Aiden</span><span class="wr-score">88.0</span><span class="wr-grade">(B)</span></div><div class="wr-item"><span class="wr-rank rank-2">#2</span><span class="wr-name">Zay</span><span class="wr-score">87.3</span><span class="wr-grade">(B)</span></div><div class="wr-item"><span class="wr-rank rank-3">#3</span><span class="wr-name">Martise</span><span class="wr-score">79.8</span><span class="wr-grade">(C)</span></div><div class="wr-item"><span class="wr-rank rank-4">#4</span><span class="wr-name">Braiden</span><span class="wr-score">77.7</span><span class="wr-grade">(C)</span></div><div class="wr-item"><span class="wr-rank rank-5">#5</span><span class="wr-name">Taj</span><span class="wr-score">75.3</span><span class="wr-grade">(C)</span></div>
+      </div>
     </div>
-  </div>
-
-  <div class="section" style="margin-top:18px">
-    <details>
-      <summary><b>How to score well</b></summary>
-      <ul>
-        <li><b>Relentless effort every rep</b>: finish full speed, strain on blocks (earn Relentless Effort, avoid Loaf/Not Full Speed).</li>
-        <li><b>Master your assignment</b>: split, depth, route landmark, adjust vs coverage (avoid Missed Assignment).</li>
-        <li><b>Elite, crisp routes</b>: full depth, explode out, hold leverage (earn Elite Route/Good Route, avoid Bad Route).</li>
-        <li><b>Win the ball</b>: eyes-to-tuck, high-point, squeeze through contact (earn Spectacular Catch, avoid Dropped Pass).</li>
-        <li><b>Add yards and chains</b>: fight through contact; Catch/Rush yardage = +0.5 per yard; Broken Tackle(s) +1.0/bt; First Downs +5.</li>
-        <li><b>Dominate run game</b>: position + hand fit + run feet (Good Block +2, Pancake +10).</li>
-        <li><b>Finish drives</b>: Touchdowns are +15; red-zone detail matters.</li>
-      </ul>
-      <div class="muted">Key Play Points Rubric: Touchdown +15, Relentless Effort +5, Elite Route +7, Good Route +2, Catch/Rush yardage +0.5/yd, Broken Tackle(s) +1.0/bt, Good Block +2, Pancake +10, First Down +5, Spectacular Catch +10; Missed Assignment -10, Dropped Pass -15, Bad Route -2, Loaf (Laziness) -2, Not Full Speed -3, Whiffed -1, Holding 0.</div>
-    </details>
-  </div>
-  <div class="section">
-    <h2>Weeks</h2>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Week</th><th>Opponent</th><th>Weekly Dashboards</th><th>Snapshot</th><th>Summary</th><th>Group Film</th><th>CSVs</th></tr></thead>
-        <tbody><tr><td>Wk1</td><td>Lakewood</td><td><a href="Wk1/dashboards/index.html" onclick="if(window.gtag){gtag('event','open_week_dash',{event_category:'navigation',week:'Wk1'});}">Dashboards</a></td><td><a href="Wk1/snapshot.html" onclick="if(window.gtag){gtag('event','open_snapshot',{event_category:'navigation',week:'Wk1'});}">Snapshot</a></td><td><a href="Wk1/pdfs/summary.pdf" onclick="if(window.gtag){gtag('event','open_summary_pdf',{event_category:'navigation',week:'Wk1'});}">Summary PDF</a></td><td><a href="Wk1/pdfs/group_film_study.pdf" onclick="if(window.gtag){gtag('event','open_group_pdf',{event_category:'navigation',week:'Wk1'});}">Group Film PDF</a></td><td><a href="Wk1/results_Wk1_Lakewood.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk1'});}">results_Wk1_Lakewood.csv</a> <a href="Wk1/results_Wk1_Lakewood_summary.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk1'});}">results_Wk1_Lakewood_summary.csv</a></td></tr><tr><td>Wk2</td><td>KentCity</td><td><a href="Wk2/dashboards/index.html" onclick="if(window.gtag){gtag('event','open_week_dash',{event_category:'navigation',week:'Wk2'});}">Dashboards</a></td><td><a href="Wk2/snapshot.html" onclick="if(window.gtag){gtag('event','open_snapshot',{event_category:'navigation',week:'Wk2'});}">Snapshot</a></td><td><a href="Wk2/pdfs/summary.pdf" onclick="if(window.gtag){gtag('event','open_summary_pdf',{event_category:'navigation',week:'Wk2'});}">Summary PDF</a></td><td><a href="Wk2/pdfs/group_film_study.pdf" onclick="if(window.gtag){gtag('event','open_group_pdf',{event_category:'navigation',week:'Wk2'});}">Group Film PDF</a></td><td><a href="Wk2/results_Wk2_KentCity.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk2'});}">results_Wk2_KentCity.csv</a> <a href="Wk2/results_Wk2_KentCity_summary.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk2'});}">results_Wk2_KentCity_summary.csv</a></td></tr><tr><td>Wk3</td><td>ComstockPark</td><td><a href="Wk3/dashboards/index.html" onclick="if(window.gtag){gtag('event','open_week_dash',{event_category:'navigation',week:'Wk3'});}">Dashboards</a></td><td><a href="Wk3/snapshot.html" onclick="if(window.gtag){gtag('event','open_snapshot',{event_category:'navigation',week:'Wk3'});}">Snapshot</a></td><td><a href="Wk3/pdfs/summary.pdf" onclick="if(window.gtag){gtag('event','open_summary_pdf',{event_category:'navigation',week:'Wk3'});}">Summary PDF</a></td><td><a href="Wk3/pdfs/group_film_study.pdf" onclick="if(window.gtag){gtag('event','open_group_pdf',{event_category:'navigation',week:'Wk3'});}">Group Film PDF</a></td><td><a href="Wk3/results_Wk3_ComstockPark.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk3'});}">results_Wk3_ComstockPark.csv</a> <a href="Wk3/results_Wk3_ComstockPark_summary.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk3'});}">results_Wk3_ComstockPark_summary.csv</a></td></tr><tr><td>Wk4</td><td>Hopkins</td><td><a href="Wk4/dashboards/index.html" onclick="if(window.gtag){gtag('event','open_week_dash',{event_category:'navigation',week:'Wk4'});}">Dashboards</a></td><td><a href="Wk4/snapshot.html" onclick="if(window.gtag){gtag('event','open_snapshot',{event_category:'navigation',week:'Wk4'});}">Snapshot</a></td><td><a href="Wk4/pdfs/summary.pdf" onclick="if(window.gtag){gtag('event','open_summary_pdf',{event_category:'navigation',week:'Wk4'});}">Summary PDF</a></td><td><a href="Wk4/pdfs/group_film_study.pdf" onclick="if(window.gtag){gtag('event','open_group_pdf',{event_category:'navigation',week:'Wk4'});}">Group Film PDF</a></td><td><a href="Wk4/results_Wk4_Hopkins.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk4'});}">results_Wk4_Hopkins.csv</a> <a href="Wk4/results_Wk4_Hopkins_summary.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk4'});}">results_Wk4_Hopkins_summary.csv</a></td></tr><tr><td>Wk6</td><td>Holland</td><td><a href="Wk6/dashboards/index.html" onclick="if(window.gtag){gtag('event','open_week_dash',{event_category:'navigation',week:'Wk6'});}">Dashboards</a></td><td><a href="Wk6/snapshot.html" onclick="if(window.gtag){gtag('event','open_snapshot',{event_category:'navigation',week:'Wk6'});}">Snapshot</a></td><td><a href="Wk6/pdfs/summary.pdf" onclick="if(window.gtag){gtag('event','open_summary_pdf',{event_category:'navigation',week:'Wk6'});}">Summary PDF</a></td><td><a href="Wk6/pdfs/group_film_study.pdf" onclick="if(window.gtag){gtag('event','open_group_pdf',{event_category:'navigation',week:'Wk6'});}">Group Film PDF</a></td><td><a href="Wk6/results_Wk6_Holland.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk6'});}">results_Wk6_Holland.csv</a> <a href="Wk6/results_Wk6_Holland_summary.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk6'});}">results_Wk6_Holland_summary.csv</a></td></tr><tr><td>Wk7</td><td>Fruitport</td><td><a href="Wk7/dashboards/index.html" onclick="if(window.gtag){gtag('event','open_week_dash',{event_category:'navigation',week:'Wk7'});}">Dashboards</a></td><td><a href="Wk7/snapshot.html" onclick="if(window.gtag){gtag('event','open_snapshot',{event_category:'navigation',week:'Wk7'});}">Snapshot</a></td><td><a href="Wk7/pdfs/summary.pdf" onclick="if(window.gtag){gtag('event','open_summary_pdf',{event_category:'navigation',week:'Wk7'});}">Summary PDF</a></td><td><a href="Wk7/pdfs/group_film_study.pdf" onclick="if(window.gtag){gtag('event','open_group_pdf',{event_category:'navigation',week:'Wk7'});}">Group Film PDF</a></td><td><a href="Wk7/results_Wk7_Fruitport.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk7'});}">results_Wk7_Fruitport.csv</a> <a href="Wk7/results_Wk7_Fruitport_summary.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk7'});}">results_Wk7_Fruitport_summary.csv</a></td></tr><tr><td>Wk8</td><td>Kville</td><td><a href="Wk8/dashboards/index.html" onclick="if(window.gtag){gtag('event','open_week_dash',{event_category:'navigation',week:'Wk8'});}">Dashboards</a></td><td><a href="Wk8/snapshot.html" onclick="if(window.gtag){gtag('event','open_snapshot',{event_category:'navigation',week:'Wk8'});}">Snapshot</a></td><td><a href="Wk8/pdfs/summary.pdf" onclick="if(window.gtag){gtag('event','open_summary_pdf',{event_category:'navigation',week:'Wk8'});}">Summary PDF</a></td><td><a href="Wk8/pdfs/group_film_study.pdf" onclick="if(window.gtag){gtag('event','open_group_pdf',{event_category:'navigation',week:'Wk8'});}">Group Film PDF</a></td><td><a href="Wk8/results_Wk8_Kville.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk8'});}">results_Wk8_Kville.csv</a> <a href="Wk8/results_Wk8_Kville_summary.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk8'});}">results_Wk8_Kville_summary.csv</a></td></tr><tr><td>Wk9</td><td>Belding</td><td><a href="Wk9/dashboards/index.html" onclick="if(window.gtag){gtag('event','open_week_dash',{event_category:'navigation',week:'Wk9'});}">Dashboards</a></td><td><a href="Wk9/snapshot.html" onclick="if(window.gtag){gtag('event','open_snapshot',{event_category:'navigation',week:'Wk9'});}">Snapshot</a></td><td><a href="Wk9/pdfs/summary.pdf" onclick="if(window.gtag){gtag('event','open_summary_pdf',{event_category:'navigation',week:'Wk9'});}">Summary PDF</a></td><td><a href="Wk9/pdfs/group_film_study.pdf" onclick="if(window.gtag){gtag('event','open_group_pdf',{event_category:'navigation',week:'Wk9'});}">Group Film PDF</a></td><td><a href="Wk9/results_Wk9_Belding.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk9'});}">results_Wk9_Belding.csv</a> <a href="Wk9/results_Wk9_Belding_summary.csv" onclick="if(window.gtag){gtag('event','open_csv',{event_category:'navigation',week:'Wk9'});}">results_Wk9_Belding_summary.csv</a></td></tr></tbody>
-      </table>
+        
     </div>
+    
+    <p style="margin-top: 32px; color: var(--muted); font-size: 12px;">Generated by make_season_selector.py</p>
   </div>
-
-  <p class="muted">Generated by make_site_index.py</p>
 </body>
 </html>

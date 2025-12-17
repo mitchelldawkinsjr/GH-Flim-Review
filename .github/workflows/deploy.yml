@@ -31,24 +31,44 @@ jobs:
           GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
         run: |
           set -e
-          # Weekly dashboards and snapshots
-          for d in out/Wk*; do
-            wk="${d##*/Wk}"
-            details=$(ls "$d"/results_*.csv 2>/dev/null | head -n1 || true)
-            pdfs="$d/pdfs"
-            if [ -f "$details" ]; then
-              python tools/make_dashboard_html.py --details_csv "$details" --out_dir "$d/dashboards" --title "Week $wk Player Dashboards" --pdfs_dir "$pdfs" --week "$wk"
-              prep=$(ls "$d"/Wk*_*_prepared.csv 2>/dev/null | head -n1 || true)
-              if [ -f "$prep" ]; then
-                python tools/make_snapshot_html.py --details_csv "$details" --prepared_csv "$prep" --out "$d/snapshot.html"
-              else
-                python tools/make_snapshot_html.py --details_csv "$details" --out "$d/snapshot.html"
-              fi
+          # Process each season
+          for season_dir in out/[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]; do
+            if [ ! -d "$season_dir" ]; then
+              continue
             fi
+            season=$(basename "$season_dir")
+            echo "Processing season: $season"
+            
+            # Weekly dashboards and snapshots
+            for d in "$season_dir"/Wk*; do
+              if [ ! -d "$d" ]; then
+                continue
+              fi
+              wk="${d##*/Wk}"
+              details=$(ls "$d"/results_*.csv 2>/dev/null | head -n1 || true)
+              pdfs="$d/pdfs"
+              if [ -f "$details" ]; then
+                python tools/make_dashboard_html.py --details_csv "$details" --out_dir "$d/dashboards" --title "Week $wk Player Dashboards" --pdfs_dir "$pdfs" --week "$wk"
+                prep=$(ls "$d"/Wk*_*_prepared.csv 2>/dev/null | head -n1 || true)
+                if [ -f "$prep" ]; then
+                  python tools/make_snapshot_html.py --details_csv "$details" --prepared_csv "$prep" --out "$d/snapshot.html"
+                else
+                  python tools/make_snapshot_html.py --details_csv "$details" --out "$d/snapshot.html"
+                fi
+              fi
+            done
+            
+            # Season dashboards for this season
+            if ls "$season_dir"/Wk*/results_*.csv 1> /dev/null 2>&1; then
+              python tools/make_season_dashboard_html.py --weekly_glob "$season_dir/Wk*/results_*.csv" --out_dir "$season_dir/Season/dashboards" --title "Season Player Dashboards"
+            fi
+            
+            # Site index for this season
+            python tools/make_site_index.py --out_root out --season "$season"
           done
-          # Season dashboards and site index
-          python tools/make_season_dashboard_html.py --weekly_glob "out/Wk*/results_*.csv" --out_dir out/Season/dashboards --title "Season Player Dashboards"
-          python tools/make_site_index.py --out_root out
+          
+          # Generate root season selector
+          python tools/make_season_selector.py --out_root out
 
       - name: Deploy to GitHub Pages (publish out/ to gh-pages)
         uses: peaceiris/actions-gh-pages@v3
