@@ -1,0 +1,28 @@
+# Production stack (VPS): static film review site from out/
+# Joins 360ws-network so ghfb-app can proxy /film/ → flim-review-app:80
+
+name: flim-review
+
+services:
+  app:
+    build: .
+    container_name: flim-review-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PUBLISH_PORT:-8021}:80"
+    networks:
+      - proxy
+    labels:
+      - "com.360ws.app=flim-review"
+      - "com.360ws.type=docker-app"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  proxy:
+    external: true
+    name: 360ws-network

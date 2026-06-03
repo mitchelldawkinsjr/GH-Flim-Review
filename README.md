@@ -104,3 +104,19 @@ for d in out/Wk*; do \
 - Discipline (MA/Loaf) is derived from codes when provided and zeroed when snaps=0.
 - Group film PDF aggregates per-play details and code expansions.
 - All HTML is mobile-optimized (responsive tables, sparkline, embedded PDF height).
+
+## VPS deployment
+
+The site also deploys to a private VPS via GitHub Actions (`.github/workflows/deploy-vps.yml`), using the same secrets as other 360web apps:
+
+- `VPS_SSH_KEY`
+- `VPS_HOST`
+- `VPS_USER`
+- `GA_MEASUREMENT_ID` (optional)
+
+CI re-renders HTML, builds a Docker nginx image from `out/`, and runs `docker-compose.prod.yml` on a shared reverse-proxy network. The Godwin Heights hub proxies `/film/` to this container for in-app PWA navigation.
+
+GitHub Pages (`deploy.yml`) continues to publish a public mirror on push to `main`.
+
+One-time host setup: `scripts/vps-bootstrap.sh`
+

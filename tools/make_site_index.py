@@ -5,6 +5,10 @@ import glob
 import html
 import re
 import os
+import sys
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from tools.ghfb_hub_link import HUB_LINK_CSS, HUB_LINK_HTML
 
 
 def main():
@@ -150,7 +154,7 @@ def main():
     a:hover { text-decoration: underline; }
     details summary { cursor: pointer; }
     @media (max-width: 640px) { body { margin: 14px; } thead th, tbody td { padding: 10px 12px; } }
-    """
+    """ + HUB_LINK_CSS
 
     html_str = f"""
 <!doctype html>
@@ -165,6 +169,7 @@ def main():
 </head>
 <body>
   <div class=\"container\">
+    {HUB_LINK_HTML}
     <div class=\"breadcrumbs\"><a href=\"../../index.html\">Home</a> · <a href=\"{html.escape(rel(season_index))}\">Season</a></div>
     <h1>Film Review Hub - {html.escape(args.season)} Season</h1>
 

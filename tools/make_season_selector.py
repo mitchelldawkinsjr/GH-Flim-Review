@@ -12,6 +12,7 @@ import sys
 # Import letter function from film_grade
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from film_grade import letter
+from tools.ghfb_hub_link import HUB_LINK_CSS, HUB_LINK_HTML
 
 
 def calculate_top_wrs(season_path: Path, top_n: int = 5, excluded_players: list = None) -> list[dict]:
@@ -218,7 +219,7 @@ def main():
         font-size: 28px;
       }
     }
-    """
+    """ + HUB_LINK_CSS
     
     season_cards_html = []
     for season in seasons:
@@ -281,6 +282,7 @@ def main():
 </head>
 <body>
   <div class="container">
+    {HUB_LINK_HTML}
     <h1>Film Review Hub</h1>
     <p style="color: var(--muted); margin-bottom: 8px;">Select a season to view player dashboards, weekly reports, and statistics.</p>
     

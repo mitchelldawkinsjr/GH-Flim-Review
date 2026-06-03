@@ -1,0 +1,147 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "out/**"
+      - "tools/**"
+      - "csv/**"
+      - "film_grade.py"
+      - "deploy/**"
+      - "Dockerfile"
+      - "docker-compose.prod.yml"
+      - ".github/workflows/deploy-vps.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy flim-review to VPS
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify deploy secrets
+        run: |
+          if [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "::error::VPS_SSH_KEY is not set."
+            exit 1
+          fi
+          if [ -z "${{ secrets.VPS_HOST }}" ] || [ -z "${{ secrets.VPS_USER }}" ]; then
+            echo "::error::VPS_HOST and VPS_USER must be set."
+            exit 1
+          fi
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies for HTML generation
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas
+
+      - name: Re-render HTML from existing outputs
+        env:
+          GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
+        run: |
+          set -e
+          for season_dir in out/[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]; do
+            if [ ! -d "$season_dir" ]; then
+              continue
+            fi
+            season=$(basename "$season_dir")
+            echo "Processing season: $season"
+
+            for d in "$season_dir"/Wk*; do
+              if [ ! -d "$d" ]; then
+                continue
+              fi
+              wk="${d##*/Wk}"
+              details=$(ls "$d"/results_*.csv 2>/dev/null | head -n1 || true)
+              pdfs="$d/pdfs"
+              if [ -f "$details" ]; then
+                python tools/make_dashboard_html.py --details_csv "$details" --out_dir "$d/dashboards" --title "Week $wk Player Dashboards" --pdfs_dir "$pdfs" --week "$wk"
+                prep=$(ls "$d"/Wk*_*_prepared.csv 2>/dev/null | head -n1 || true)
+                if [ -f "$prep" ]; then
+                  python tools/make_snapshot_html.py --details_csv "$details" --prepared_csv "$prep" --out "$d/snapshot.html"
+                else
+                  python tools/make_snapshot_html.py --details_csv "$details" --out "$d/snapshot.html"
+                fi
+              fi
+            done
+
+            if ls "$season_dir"/Wk*/results_*.csv 1> /dev/null 2>&1; then
+              python tools/make_season_dashboard_html.py --weekly_glob "$season_dir/Wk*/results_*.csv" --out_dir "$season_dir/Season/dashboards" --title "Season Player Dashboards"
+            fi
+
+            python tools/make_site_index.py --out_root out --season "$season"
+          done
+
+          python tools/make_season_selector.py --out_root out
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -e
+
+          ssh ${VPS_USER}@${VPS_HOST} << 'EOF'
+            set -e
+            mkdir -p /opt/360ws/clients/docker-app/flim-review
+            docker network ls --format '{{.Name}}' | grep -q '^360ws-network$' || docker network create 360ws-network
+          EOF
+
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude '.env' \
+            --exclude 'monolith/' \
+            --exclude 'venv/' \
+            --exclude '__pycache__/' \
+            ./ ${VPS_USER}@${VPS_HOST}:/opt/360ws/clients/docker-app/flim-review/
+
+          ssh ${VPS_USER}@${VPS_HOST} << 'EOF'
+            set -e
+            cd /opt/360ws/clients/docker-app/flim-review
+
+            docker compose -f docker-compose.prod.yml build --no-cache
+            docker compose -f docker-compose.prod.yml down || true
+            docker compose -f docker-compose.prod.yml up -d
+
+            echo "Waiting for flim-review-app..."
+            sleep 5
+
+            max_attempts=30
+            attempt=0
+            while [ $attempt -lt $max_attempts ]; do
+              if curl -fsS http://localhost:8021/ -o /dev/null; then
+                echo "Health check passed!"
+                break
+              fi
+              attempt=$((attempt + 1))
+              echo "Health check attempt $attempt/$max_attempts failed, retrying..."
+              sleep 2
+            done
+
+            if [ $attempt -eq $max_attempts ]; then
+              echo "Health check failed."
+              docker compose -f docker-compose.prod.yml logs app
+              exit 1
+            fi
+
+            echo "Deployment successful!"
+          EOF
