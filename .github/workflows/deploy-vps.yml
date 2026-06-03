@@ -15,25 +15,45 @@ on:
   workflow_dispatch:
 
 jobs:
+  secrets-check:
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - name: Check VPS secrets
+        id: check
+        run: |
+          if [ -n "${{ secrets.VPS_SSH_KEY }}" ] && [ -n "${{ secrets.VPS_HOST }}" ] && [ -n "${{ secrets.VPS_USER }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Warn when secrets are missing
+        if: steps.check.outputs.configured != 'true' && github.event_name == 'push'
+        run: |
+          echo "::warning::VPS deploy skipped. Add repository secrets VPS_SSH_KEY, VPS_HOST, and VPS_USER (same values as the ghfb repo), then re-run Deploy to VPS from Actions."
+
+  secrets-required:
+    needs: secrets-check
+    if: needs.secrets-check.outputs.configured != 'true' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail — VPS secrets not configured
+        run: |
+          echo "::error::Add VPS_SSH_KEY, VPS_HOST, and VPS_USER under Settings → Secrets and variables → Actions for this repository."
+          echo "Use the same values as the ghfb repo, then re-run this workflow."
+          exit 1
+
   deploy:
     name: Deploy flim-review to VPS
+    needs: secrets-check
+    if: needs.secrets-check.outputs.configured == 'true'
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Verify deploy secrets
-        run: |
-          if [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
-            echo "::error::VPS_SSH_KEY is not set."
-            exit 1
-          fi
-          if [ -z "${{ secrets.VPS_HOST }}" ] || [ -z "${{ secrets.VPS_USER }}" ]; then
-            echo "::error::VPS_HOST and VPS_USER must be set."
-            exit 1
-          fi
 
       - name: Setup Python
         uses: actions/setup-python@v5

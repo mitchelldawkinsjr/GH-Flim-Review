@@ -107,12 +107,19 @@ for d in out/Wk*; do \
 
 ## VPS deployment
 
-The site also deploys to a private VPS via GitHub Actions (`.github/workflows/deploy-vps.yml`), using the same secrets as other 360web apps:
+The site also deploys to a private VPS via GitHub Actions (`.github/workflows/deploy-vps.yml`).
 
-- `VPS_SSH_KEY`
-- `VPS_HOST`
-- `VPS_USER`
-- `GA_MEASUREMENT_ID` (optional)
+**One-time setup:** In the **GH-Flim-Review** repo on GitHub, go to **Settings → Secrets and variables → Actions** and add the same three secrets used by ghfb:
+
+| Secret | Purpose |
+|--------|---------|
+| `VPS_SSH_KEY` | Private SSH key for the deploy user |
+| `VPS_HOST` | VPS hostname or IP |
+| `VPS_USER` | SSH username |
+
+Optional: `GA_MEASUREMENT_ID` for analytics in regenerated HTML.
+
+Until those secrets exist, pushes still publish to GitHub Pages; the VPS workflow skips with a warning. After adding secrets, run **Actions → Deploy to VPS → Run workflow**.
 
 CI re-renders HTML, builds a Docker nginx image from `out/`, and runs `docker-compose.prod.yml` on a shared reverse-proxy network. The Godwin Heights hub proxies `/film/` to this container for in-app PWA navigation.
 
