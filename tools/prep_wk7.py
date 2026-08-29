@@ -53,7 +53,10 @@ def main():
 
     # Build output DataFrame from exact original headers
     get_num = lambda col: pd.to_numeric(df_raw.get(col, 0), errors='coerce').fillna(0).astype(int)
-    get_txt = lambda col: df_raw.get(col, '').astype(str) if col in df_raw.columns else pd.Series('', index=df_raw.index)
+    def get_txt(col):
+        if col not in df_raw.columns:
+            return pd.Series('', index=df_raw.index)
+        return df_raw[col].astype(object).where(df_raw[col].notna(), '').astype(str)
 
     out = pd.DataFrame({
         'player': get_txt(player_col) if player_col else pd.Series('', index=df_raw.index),
