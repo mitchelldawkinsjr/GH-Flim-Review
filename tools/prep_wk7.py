@@ -20,6 +20,23 @@ def count_list(x) -> int:
     return 0
 
 
+def strip_headers(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    out.columns = [str(c).strip() for c in out.columns]
+    return out
+
+
+def find_column(df: pd.DataFrame, *names: str) -> str | None:
+    by_lower = {str(c).strip().lower(): c for c in df.columns}
+    for name in names:
+        if name in df.columns:
+            return name
+        key = name.strip().lower()
+        if key in by_lower:
+            return by_lower[key]
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('in_csv')
@@ -27,14 +44,19 @@ def main():
     ap.add_argument('--week', type=int, required=True)
     args = ap.parse_args()
 
-    df_raw = pd.read_csv(args.in_csv)
+    df_raw = strip_headers(pd.read_csv(args.in_csv))
+    player_col = find_column(df_raw, 'Player', 'Name')
+    if not player_col:
+        raise SystemExit(
+            f"Missing Player/Name column. Found: {list(df_raw.columns)}"
+        )
 
     # Build output DataFrame from exact original headers
     get_num = lambda col: pd.to_numeric(df_raw.get(col, 0), errors='coerce').fillna(0).astype(int)
     get_txt = lambda col: df_raw.get(col, '').astype(str) if col in df_raw.columns else pd.Series('', index=df_raw.index)
 
     out = pd.DataFrame({
-        'player': get_txt('Player'),
+        'player': get_txt(player_col) if player_col else pd.Series('', index=df_raw.index),
         'week': int(args.week),
         'snaps': get_num('Snap count'),
         'targets': get_num('Targets'),

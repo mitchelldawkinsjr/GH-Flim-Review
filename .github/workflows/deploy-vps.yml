@@ -6,7 +6,6 @@ on:
     paths:
       - "out/**"
       - "tools/**"
-      - "csv/**"
       - "film_grade.py"
       - "deploy/**"
       - "Dockerfile"
@@ -103,6 +102,7 @@ jobs:
           done
 
           python tools/make_season_selector.py --out_root out
+          python tools/make_upload_html.py --out_root out
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0

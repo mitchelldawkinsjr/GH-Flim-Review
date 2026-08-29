@@ -5,62 +5,93 @@ import sys
 from pathlib import Path
 
 
-def find_csv(week: int, opponent: str, explicit_path: str | None) -> Path:
+def _csv_filenames(week: int, opponent: str) -> list[str]:
+    opp_raw = opponent
+    return [
+        f"Wk{week}_{opp_raw}.csv",
+        f"Wk{week}{opp_raw}.csv",
+        f"Wk{week}_{opp_raw.replace(' ', '_')}.csv",
+        f"Wk{week}{opp_raw.replace(' ', '')}.csv",
+    ]
+
+
+def find_csv(
+    week: int,
+    opponent: str,
+    explicit_path: str | None,
+    season: str | None = None,
+    csv_root: Path | None = None,
+    project_root: Path | None = None,
+) -> Path:
     if explicit_path:
         p = Path(explicit_path)
-        if p.exists():
-            return p
+        candidates = [p]
+        if not p.is_absolute() and project_root is not None:
+            candidates.append(project_root / p)
+        for c in candidates:
+            if c.exists():
+                return c
         raise SystemExit(f"CSV not found at provided path: {p}")
 
-    csv_dir = Path('csv')
-    if not csv_dir.exists():
-        raise SystemExit("csv/ directory not found")
+    csv_root = csv_root if csv_root is not None else Path('csv')
+    if not csv_root.exists():
+        raise SystemExit(f"csv/ directory not found at {csv_root}")
 
-    # Candidate file names by convention
-    opp_raw = opponent
-    candidates = [
-        csv_dir / f"Wk{week}_{opp_raw}.csv",
-        csv_dir / f"Wk{week}{opp_raw}.csv",
-        csv_dir / f"Wk{week}_{opp_raw.replace(' ', '_')}.csv",
-        csv_dir / f"Wk{week}{opp_raw.replace(' ', '')}.csv",
-    ]
-    for c in candidates:
-        if c.exists():
-            return c
+    # Prefer the season folder (csv/2026-2027/), then legacy csv/ root
+    search_dirs: list[Path] = []
+    if season:
+        search_dirs.append(csv_root / season)
+    search_dirs.append(csv_root)
 
-    # Fallback: case-insensitive search containing both week marker and opponent substring
+    for csv_dir in search_dirs:
+        if not csv_dir.is_dir():
+            continue
+        for name in _csv_filenames(week, opponent):
+            c = csv_dir / name
+            if c.exists():
+                return c
+
     week_tag = f"wk{week}".lower()
+
     def norm(s: str) -> str:
         return ''.join(ch.lower() for ch in s if ch.isalnum())
 
     opp_norm = norm(opponent)
     matches: list[Path] = []
-    for p in csv_dir.glob('*.csv'):
-        name_norm = norm(p.name)
-        if week_tag in name_norm and opp_norm in name_norm:
-            matches.append(p)
+    for csv_dir in search_dirs:
+        if not csv_dir.is_dir():
+            continue
+        for p in csv_dir.glob('*.csv'):
+            name_norm = norm(p.name)
+            if week_tag in name_norm and opp_norm in name_norm:
+                matches.append(p)
     if len(matches) == 1:
         return matches[0]
     if len(matches) > 1:
-        # Prefer one with underscore between week and opponent
         pref = [m for m in matches if f"wk{week}_" in m.name.lower()]
         if pref:
             return pref[0]
         return matches[0]
 
-    raise SystemExit(f"Could not locate CSV for week {week} and opponent '{opponent}'.\n"
-                     f"Searched in {csv_dir} with common patterns.")
+    searched = ', '.join(str(d) for d in search_dirs)
+    raise SystemExit(
+        f"Could not locate CSV for week {week} and opponent '{opponent}'.\n"
+        f"Searched in: {searched}"
+    )
 
 
-def pick_python_bin(user_bin: str | None) -> str:
+def pick_python_bin(user_bin: str | None, project_root: Path | None = None) -> str:
     # Prefer provided venv python if it exists, else fallback to current interpreter
     if user_bin:
         pb = Path(user_bin)
         if pb.exists():
             return str(pb)
-    venv_default = Path('./venv/bin/python')
+    venv_default = (project_root / 'venv' / 'bin' / 'python') if project_root else Path('./venv/bin/python')
     if venv_default.exists():
         return str(venv_default)
+    cwd_venv = Path('./venv/bin/python')
+    if cwd_venv.exists():
+        return str(cwd_venv)
     return sys.executable
 
 
@@ -79,12 +110,17 @@ def main():
     season = str(args.season)
 
     project_root = Path(__file__).resolve().parents[1]
-    csv_path = find_csv(week, opp, args.csv)
+    csv_path = find_csv(
+        week, opp, args.csv,
+        season=season,
+        csv_root=project_root / 'csv',
+        project_root=project_root,
+    )
 
     out_dir = Path(args.out_dir) if args.out_dir else project_root / 'out' / season / f"Wk{week}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    python_bin = pick_python_bin(args.python_bin)
+    python_bin = pick_python_bin(args.python_bin, project_root=project_root)
 
     prepared_csv = out_dir / f"Wk{week}_{opp}_prepared.csv"
     results_csv_name = f"results_Wk{week}_{opp}.csv"
@@ -185,6 +221,13 @@ def main():
         '--out_root', str(project_root / 'out')
     ], check=True)
     print(f"  Season Selector: {project_root / 'out' / 'index.html'}")
+
+    subprocess.run([
+        python_bin, str(project_root / 'tools' / 'make_upload_html.py'),
+        '--out_root', str(project_root / 'out'),
+        '--csv_root', str(project_root / 'csv'),
+    ], check=True)
+    print(f"  Upload page: {project_root / 'out' / 'upload.html'}")
 
 
 if __name__ == '__main__':
