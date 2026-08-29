@@ -32,6 +32,9 @@ CODE_LABELS = {
     'NFS': 'Not Full Speed',
     'W': 'Whiffed',
     'BT': 'Broken Tackle',
+    'LF': 'Lack of Focus',
+    'BBL': 'Bad Body Language',
+    'EP': 'Extra Point Conversion',
 }
 
 

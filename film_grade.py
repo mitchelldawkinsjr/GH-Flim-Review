@@ -52,9 +52,12 @@ LEGEND_POINTS = {
     "L": -2,
     "NFS": -3,
     "W": -1,
+    "LF": -0.5,
+    "BBL": -0.5,
+    "EP": 2,
 }
 
-POSITIVE_CODES_FOR_KEYPLAYS = {"TD","SC","ER","GR","GB","P","FD","E"}
+POSITIVE_CODES_FOR_KEYPLAYS = {"TD","SC","ER","GR","GB","P","FD","E","EP"}
 
 # Patterns for variable-valued codes
 PATTERN_CATCH_YARDS = re.compile(r'^(?:\(?\s*)?C\+(?P<n>-?\d+)(?:\s*\)?)?$', flags=re.IGNORECASE)
@@ -144,7 +147,7 @@ def parse_codes_to_points(codes_str):
         m_bt = PATTERN_BT_YARDS.match(t)
         if m_bt:
             n = int(m_bt.group('n'))
-            total += 1.0 * n
+            total += 0.5 * n
             yards_bt += n
             # count BT occurrence for code counts table
             try:
@@ -298,11 +301,11 @@ def make_reports(out_df, reports_dir='reports', by_player='player', by_week='wee
             items.sort(key=lambda x: x[1], reverse=True)
             return [(k,v) for k,v in items if v>0][:topn]
 
-        positive_keys = ["TD","SC","ER","GR","GB","P","FD","E"]
-        negative_keys = ["MA","DP","L","NFS","W","BR","H"]
+        positive_keys = ["TD","SC","ER","GR","GB","P","FD","E","EP"]
+        negative_keys = ["MA","DP","L","NFS","W","BR","H","LF","BBL"]
 
-        pos_top = pick_top(inv, positive_keys, topn=7)
-        neg_top = pick_top(inv, negative_keys, topn=7)
+        pos_top = pick_top(inv, positive_keys, topn=10)
+        neg_top = pick_top(inv, negative_keys, topn=10)
 
         if pos_top:
             lines.append("WHAT YOU DID WELL")
@@ -326,6 +329,10 @@ def make_reports(out_df, reports_dir='reports', by_player='player', by_week='wee
             coaching.append("Finish every rep on film — sprint off screen, block through whistle.")
         if inv.get("W",0) > 0:
             coaching.append("Strike timing on stalk block — inside hand fit, under control into contact.")
+        if inv.get("LF",0) > 0:
+            coaching.append("Stay locked in: eyes up, assignment first, next-play reset.")
+        if inv.get("BBL",0) > 0:
+            coaching.append("Next-play body language: chin up, sprint back, show energy for teammates.")
         if not coaching:
             coaching.append("Keep stacking habits — practice full speed reps.")
 

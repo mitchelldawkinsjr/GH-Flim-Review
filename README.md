@@ -52,8 +52,8 @@ python3 -m venv venv
 ```
 
 ## Rubric (Key Play Points)
-- Positive: TD +15, Relentless Effort +5, Elite Route +7, Good Route +2, Catch/Rush yardage +0.5/yd, Broken Tackle(s) +1.0/bt, Good Block +2, Pancake +10, First Down +5, Spectacular Catch +10
-- Negative: Missed Assignment -10, Dropped Pass -15, Bad Route -2, Loaf -2, Not Full Speed -3, Whiffed -1, Holding 0
+- Positive: TD +15, Relentless Effort +5, Elite Route +7, Good Route +2, Catch/Rush yardage +0.5/yd, Broken Tackle(s) +0.5/bt, Good Block +2, Pancake +10, First Down +5, Spectacular Catch +10, Extra Point Conversion +2
+- Negative: Missed Assignment -10, Dropped Pass -15, Bad Route -2, Loaf -2, Not Full Speed -3, Whiffed -1, Holding 0, Lack of Focus -0.5, Bad Body Language -0.5
 
 ## Metrics (definitions)
 - Catch Rate = catches / (catches + drops)

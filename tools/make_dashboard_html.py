@@ -28,6 +28,9 @@ CODE_LABELS = {
     'NFS': 'Not Full Speed',
     'W': 'Whiffed',
     'BT': 'Broken Tackle',
+    'LF': 'Lack of Focus',
+    'BBL': 'Bad Body Language',
+    'EP': 'Extra Point Conversion',
 }
 
 
@@ -287,7 +290,14 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
         ("Loafs per 30", f"{rates['loafs_per30']:.2f}"),
     ]
 
-    codes_rows = sorted(code_counts.items(), key=lambda kv: kv[1], reverse=True)
+    merged_counts = {k: int(code_counts.get(k, 0) or 0) for k in CODE_LABELS}
+    for k, v in code_counts.items():
+        if k not in merged_counts:
+            try:
+                merged_counts[k] = int(v)
+            except Exception:
+                merged_counts[k] = v
+    codes_rows = sorted(merged_counts.items(), key=lambda kv: kv[1], reverse=True)
 
     def table(rows):
         html_rows = ["<table>", "<tr><th>Metric</th><th>Value</th></tr>"]

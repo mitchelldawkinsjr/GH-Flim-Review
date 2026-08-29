@@ -29,6 +29,9 @@ CODE_LABELS = {
     'NFS': 'Not Full Speed',
     'W': 'Whiffed',
     'BT': 'Broken Tackle',
+    'LF': 'Lack of Focus',
+    'BBL': 'Bad Body Language',
+    'EP': 'Extra Point Conversion',
 }
 
 # Per-code point values (aligns with film_grade.py)
@@ -48,6 +51,9 @@ LEGEND_POINTS = {
     'L': -2,
     'NFS': -3,
     'W': -1,
+    'LF': -0.5,
+    'BBL': -0.5,
+    'EP': 2,
 }
 
 
@@ -560,7 +566,7 @@ def main():
                                 elif m_bt:
                                     n = int(m_bt.group('n'))
                                     label = f"Broken Tackle(s) {'+' if n>=0 else ''}{n}"
-                                    points = 1.0 * n
+                                    points = 0.5 * n
                                 else:
                                     code = tok.upper()
                                     label = CODE_LABELS.get(code, code)

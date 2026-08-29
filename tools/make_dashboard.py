@@ -13,8 +13,8 @@ from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 
 
-POSITIVE_CODES = {"TD","SC","ER","GR","GB","P","FD","E"}
-NEGATIVE_CODES = {"MA","DP","L","NFS","W","BR","H"}
+POSITIVE_CODES = {"TD","SC","ER","GR","GB","P","FD","E","EP"}
+NEGATIVE_CODES = {"MA","DP","L","NFS","W","BR","H","LF","BBL"}
 
 
 def cell_text(val) -> str:
