@@ -78,6 +78,26 @@ export GA_MEASUREMENT_ID=G-XXXXXXXXXX
 ./venv/bin/python tools/make_site_index.py --out_root out
 ```
 
+## Weekly ingest (CSV → pages)
+
+Drop a film log at `csv/{season}/Wk{N}_{Opponent}.csv`. GitHub Action **Process week CSV** (`process-week.yml`) runs `tools/run_week.py`, commits `out/`, then dispatches Pages and VPS deploys.
+
+**Ways to add the file**
+
+1. `git add csv/2026-2027/Wk1_Holland.csv && git push`
+2. Film Review Hub → [Upload week CSV](out/upload.html) (`/film/upload.html` on the VPS) → GitHub upload into that season folder (needs repo write access)
+3. Google Sheet **Film Review → Publish this tab** (see `tools/sheets/README.md`)
+
+Manual re-run: **Actions → Process week CSV → Run workflow** with e.g. `csv/2026-2027/Wk1_Holland.csv`.
+
+Local fallback:
+
+```bash
+./venv/bin/python tools/run_week.py --week 1 --opponent Holland --season 2026-2027 --csv csv/2026-2027/Wk1_Holland.csv
+```
+
+Godwin Heights hub tile (in the ghfb app, not this repo): **Upload film CSV** → `/film/upload.html`.
+
 ## CI/CD (GitHub Pages)
 - GitHub Actions workflow publishes the `out/` directory to the `gh-pages` branch on every push to `main`.
 - Ensure Pages is set to build from `gh-pages` branch (root).

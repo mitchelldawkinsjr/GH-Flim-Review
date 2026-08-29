@@ -1,0 +1,118 @@
+name: Process week CSV
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "csv/**/*.csv"
+  workflow_dispatch:
+    inputs:
+      csv_path:
+        description: "Path to CSV, e.g. csv/2026-2027/Wk1_Holland.csv"
+        required: true
+        type: string
+
+concurrency:
+  group: process-week
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  process:
+    name: Grade CSV and generate pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install pipeline dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas reportlab pypdf pillow openpyxl numpy
+
+      - name: List CSVs to process
+        id: csvs
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_CSV: ${{ github.event.inputs.csv_path }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          : > /tmp/week_csvs.txt
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ ! -f "$INPUT_CSV" ]; then
+              echo "CSV not found: $INPUT_CSV"
+              exit 1
+            fi
+            echo "$INPUT_CSV" >> /tmp/week_csvs.txt
+          else
+            if [ -z "${BEFORE_SHA:-}" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+              git diff --name-only --diff-filter=AM HEAD^ HEAD -- 'csv/**/*.csv' >> /tmp/week_csvs.txt || true
+            else
+              git diff --name-only --diff-filter=AM "$BEFORE_SHA" "$GITHUB_SHA" -- 'csv/**/*.csv' >> /tmp/week_csvs.txt || true
+            fi
+          fi
+          # Drop blanks and missing files
+          grep -v '^[[:space:]]*$' /tmp/week_csvs.txt | while read -r f; do
+            [ -f "$f" ] && echo "$f"
+          done | tee /tmp/week_csvs_ok.txt
+          if [ ! -s /tmp/week_csvs_ok.txt ]; then
+            echo "No CSV files to process."
+            echo "has_csvs=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_csvs=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run weekly pipeline
+        if: steps.csvs.outputs.has_csvs == 'true'
+        env:
+          GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r csv_path; do
+            echo "Processing $csv_path"
+            eval "$(python tools/parse_week_csv.py --github-output "$csv_path")"
+            python tools/run_week.py \
+              --week "$week" \
+              --opponent "$opponent" \
+              --season "$season" \
+              --csv "$csv_path"
+          done < /tmp/week_csvs_ok.txt
+          python tools/make_upload_html.py --out_root out
+
+      - name: Commit generated pages
+        id: commit
+        if: steps.csvs.outputs.has_csvs == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add out/
+          if git diff --staged --quiet; then
+            echo "No generated-page changes to commit."
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -m "Generate film pages from uploaded CSV"
+          git push
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger site deploys
+        if: steps.csvs.outputs.has_csvs == 'true' && steps.commit.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh workflow run deploy.yml --ref "$GITHUB_REF_NAME"
+          gh workflow run deploy-vps.yml --ref "$GITHUB_REF_NAME"
+          echo "Dispatched Deploy Pages and Deploy to VPS."
