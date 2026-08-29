@@ -153,8 +153,8 @@ def main() -> None:
       <p class="note">
         You need write access to <code>{html.escape(repo)}</code>.
         After the file lands in <code>csv/{{season}}/</code>, pages appear on this hub in a few minutes.
-        Same result via <code>git add csv/… &amp;&amp; git push</code>.
-        From the film Google Sheet, use <strong>Film Review → Publish this tab</strong> instead.
+        Same result via <code>git add csv/… &amp;&amp; git push</code>,
+        or <strong>Actions → Process week CSV</strong> with source <code>published_sheet</code> (pulls the Google Sheet published CSV).
       </p>
     </div>
   </div>

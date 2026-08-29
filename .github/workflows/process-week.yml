@@ -7,9 +7,31 @@ on:
       - "csv/**/*.csv"
   workflow_dispatch:
     inputs:
+      source:
+        description: "CSV source"
+        type: choice
+        options:
+          - published_sheet
+          - git
+        default: published_sheet
+      season:
+        description: "Season folder (published_sheet), e.g. 2026-2027"
+        type: string
+        default: "2026-2027"
+      week:
+        description: "Week number (published_sheet)"
+        type: string
+      opponent:
+        description: "Opponent short name (published_sheet), e.g. Holland"
+        type: string
       csv_path:
-        description: "Path to CSV, e.g. csv/2026-2027/Wk1_Holland.csv"
-        required: true
+        description: "If source=git, path like csv/2026-2027/Wk1_Holland.csv"
+        type: string
+      sheets_gid:
+        description: "Optional tab gid from the Sheet URL (defaults to the published tab)"
+        type: string
+      sheets_csv_url:
+        description: "Optional override of the published CSV URL"
         type: string
 
 concurrency:
@@ -44,12 +66,43 @@ jobs:
         id: csvs
         env:
           EVENT_NAME: ${{ github.event_name }}
+          SOURCE: ${{ github.event.inputs.source }}
           INPUT_CSV: ${{ github.event.inputs.csv_path }}
+          SEASON: ${{ github.event.inputs.season }}
+          WEEK: ${{ github.event.inputs.week }}
+          OPPONENT: ${{ github.event.inputs.opponent }}
+          SHEETS_GID: ${{ github.event.inputs.sheets_gid }}
+          SHEETS_CSV_URL: ${{ github.event.inputs.sheets_csv_url }}
           BEFORE_SHA: ${{ github.event.before }}
         run: |
           set -euo pipefail
           : > /tmp/week_csvs.txt
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "${SOURCE:-published_sheet}" = "published_sheet" ]; then
+            if [ -z "${WEEK:-}" ] || [ -z "${OPPONENT:-}" ] || [ -z "${SEASON:-}" ]; then
+              echo "published_sheet requires season, week, and opponent."
+              exit 1
+            fi
+            extra=()
+            if [ -n "${SHEETS_CSV_URL:-}" ]; then
+              extra+=(--url "$SHEETS_CSV_URL")
+            fi
+            if [ -n "${SHEETS_GID:-}" ]; then
+              extra+=(--gid "$SHEETS_GID")
+            fi
+            eval "$(python tools/fetch_published_csv.py \
+              --github-output \
+              --season "$SEASON" \
+              --week "$WEEK" \
+              --opponent "$OPPONENT" \
+              "${extra[@]}")"
+            echo "$csv_path" >> /tmp/week_csvs.txt
+            echo "fetched_csv=true" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ -z "${INPUT_CSV:-}" ]; then
+              echo "source=git requires csv_path."
+              exit 1
+            fi
             if [ ! -f "$INPUT_CSV" ]; then
               echo "CSV not found: $INPUT_CSV"
               exit 1
@@ -62,7 +115,7 @@ jobs:
               git diff --name-only --diff-filter=AM "$BEFORE_SHA" "$GITHUB_SHA" -- 'csv/**/*.csv' >> /tmp/week_csvs.txt || true
             fi
           fi
-          # Drop blanks and missing files
+
           grep -v '^[[:space:]]*$' /tmp/week_csvs.txt | while read -r f; do
             [ -f "$f" ] && echo "$f"
           done | tee /tmp/week_csvs_ok.txt
@@ -71,6 +124,7 @@ jobs:
             echo "has_csvs=false" >> "$GITHUB_OUTPUT"
           else
             echo "has_csvs=true" >> "$GITHUB_OUTPUT"
+            cat /tmp/week_csvs_ok.txt
           fi
 
       - name: Run weekly pipeline
@@ -98,6 +152,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add out/
+          if [ "${{ steps.csvs.outputs.fetched_csv }}" = "true" ]; then
+            git add csv/
+          fi
           if git diff --staged --quiet; then
             echo "No generated-page changes to commit."
             echo "committed=false" >> "$GITHUB_OUTPUT"

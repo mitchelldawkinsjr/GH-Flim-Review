@@ -1,28 +1,41 @@
-# Google Sheets publish (Phase 2)
+# Google Sheets ingest (Phase 2)
 
-Bound to the WR film log:
+Primary path: **publish the tab to the web as CSV**, then let GitHub Actions pull it. No PAT and no Apps Script required.
 
-https://docs.google.com/spreadsheets/d/1ari_H6Dk_J1AfEWrpQV-VJ1rBZ-mBWF1jJbFkj5zBkQ
+## Published CSV (recommended)
 
-This script does **not** grade film. It writes `csv/{season}/Wk{N}_{Opponent}.csv` to `main`. GitHub Action `process-week.yml` does the rest.
+Workbook: https://docs.google.com/spreadsheets/d/1ari_H6Dk_J1AfEWrpQV-VJ1rBZ-mBWF1jJbFkj5zBkQ
 
-## Bind
+Current published feed (gid `916210750`):
 
-1. Open the spreadsheet → **Extensions → Apps Script**.
-2. Replace the default files with `Code.gs` and `appsscript.json` from this folder.
-3. **Project Settings → Script properties** → add `GITHUB_TOKEN`:
-   - Fine-grained PAT with **Contents: Read and write** on `mitchelldawkinsjr/GH-Flim-Review` only.
-   - Do not put the token in a sheet cell or in git.
-4. Add a tab named **Config** with:
+https://docs.google.com/spreadsheets/d/e/2PACX-1vSJN_QZbNJCypAsHSmr2YLaspdsvhMF8kVYDLPhSZaDStCU7V3PVlRJyZDHXHqrtrhSRXPl9Jq_HKwf/pub?gid=916210750&single=true&output=csv
 
-   | A      | B          |
-   |--------|------------|
-   | season | 2026-2027  |
+URL is stored in `published.json`. That link is public anyone-with-the-URL.
 
-5. Reload the spreadsheet. Menu **Film Review → Publish this tab**.
+**Publish a week**
 
-## Tab names
+1. Finish the week tab (`Wk1 Holland`, etc.).
+2. **File → Share → Publish to web** — entire document as CSV (or that tab). Keep it published.
+3. Copy the tab **gid** from the Sheet URL (`gid=916210750`).
+4. GitHub → **Actions → Process week CSV → Run workflow**:
+   - source: `published_sheet`
+   - season / week / opponent
+   - `sheets_gid` if this is not the default tab
 
-Active tab must match `Wk1 Holland` or `Wk1_Holland`. Opponent spaces become the filename token (`Holland`, `ComstockPark`).
+The Action downloads the CSV into `csv/{season}/Wk{N}_{Opponent}.csv`, runs `run_week.py`, and deploys.
 
-Re-publish overwrites the same path and rebuilds that week.
+Local dry run:
+
+```bash
+python3 tools/fetch_published_csv.py --season 2026-2027 --week 1 --opponent Holland
+```
+
+Optional `--gid 916210750` to target another published tab in the same workbook.
+
+## Apps Script push (optional)
+
+`Code.gs` can still **Film Review → Publish this tab** via the GitHub Contents API if you do not want a public CSV. See the bind steps below. Prefer the published feed unless you need the sheet to stay private.
+
+1. Extensions → Apps Script → paste `Code.gs` + `appsscript.json`
+2. Script properties: `GITHUB_TOKEN` (contents:write on `GH-Flim-Review` only)
+3. Config tab: `season` | `2026-2027`

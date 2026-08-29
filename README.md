@@ -84,15 +84,16 @@ Drop a film log at `csv/{season}/Wk{N}_{Opponent}.csv`. GitHub Action **Process 
 
 **Ways to add the file**
 
-1. `git add csv/2026-2027/Wk1_Holland.csv && git push`
-2. Film Review Hub → [Upload week CSV](out/upload.html) (`/film/upload.html` on the VPS) → GitHub upload into that season folder (needs repo write access)
-3. Google Sheet **Film Review → Publish this tab** (see `tools/sheets/README.md`)
+1. **Published Google Sheet (usual):** finish the week tab, then **Actions → Process week CSV → Run workflow** with source `published_sheet`, season, week, opponent (optional `sheets_gid` from the tab URL). Default feed is in `tools/sheets/published.json`.
+2. `git add csv/2026-2027/Wk1_Holland.csv && git push`
+3. Film Review Hub → [Upload week CSV](out/upload.html) (`/film/upload.html` on the VPS) → GitHub upload into that season folder (needs repo write access)
 
-Manual re-run: **Actions → Process week CSV → Run workflow** with e.g. `csv/2026-2027/Wk1_Holland.csv`.
+Manual re-run from a file already in git: same workflow, source `git`, csv_path e.g. `csv/2026-2027/Wk1_Holland.csv`.
 
 Local fallback:
 
 ```bash
+python3 tools/fetch_published_csv.py --season 2026-2027 --week 1 --opponent Holland
 ./venv/bin/python tools/run_week.py --week 1 --opponent Holland --season 2026-2027 --csv csv/2026-2027/Wk1_Holland.csv
 ```
 
