@@ -1,14 +1,16 @@
 PLAYER REVIEW — Darrias — Week 1
 ============================================================
-Summary: Grade C (75.7)  |  Snaps 35  |  Tgts 2  |  Rec 0 for 0 yds  |  Rush 9 yds  |  TD 0
-Discipline: Drops 0  |  MAs 1  |  Loafs 0 
-Key Plays Points (sum): -3.5
+Summary: Grade D (68.0)  |  Snaps 35  |  Tgts 2  |  Rec 0 for 0 yds  |  Rush 9 yds  |  TD 0
+Discipline: Drops 0  |  MAs 2  |  Loafs 0 
+Key Plays Points (sum): -14.0
 
 WHAT YOU DID WELL
   • GB: x1  (+2)
 
 WHERE TO IMPROVE
-  • MA: x1  (-10)
+  • MA: x2  (-20)
+  • LF: x1  (-0.5)
 
 COACHING POINTS
   • Walk-through: alignment, split, and route depth for your assignments.
+  • Stay locked in: eyes up, assignment first, next-play reset.
