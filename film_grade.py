@@ -38,8 +38,9 @@ from rubric import (
     clamp,
     letter,
     parse_codes_to_points,
-    loaf_units,
     effective_drops,
+    effective_ma,
+    effective_loafs,
     fmt_count,
 )
 
@@ -91,14 +92,11 @@ def compute_row(r):
 
     # Parse codes for points and a derived key play count
     code_points, code_counts, code_catch_yards, code_rush_yards, derived_kp = parse_codes_to_points(codes_str, warn_unknown=True)
-    # If codes are provided, set discipline tallies from code counts to avoid mismatches.
-    # LF counts as half a loaf for discipline; drops reconcile the sheet column with DP codes.
-    if isinstance(codes_str, str) and codes_str.strip():
-        try:
-            ma = int(code_counts.get('MA', 0))
-            loafs = loaf_units(code_counts)
-        except Exception:
-            pass
+    # Discipline totals reconcile the sheet columns with the codes so a
+    # discipline event recorded either way is captured without double-counting.
+    # LF (Lack of Focus) is its own code, not a loaf.
+    ma = effective_ma(ma, code_counts)
+    loafs = effective_loafs(loafs, code_counts)
     drops = effective_drops(drops, code_counts)
 
     # Re-apply the no-snaps guard after the codes override so codes can't
@@ -123,6 +121,10 @@ def compute_row(r):
     drops_rate = safe_div(drops, (catches + drops))
     loafs_per30 = per30(loafs, snaps)
     ma_per30 = per30(ma, snaps)
+    # LF (Lack of Focus) is a light ding on the grade: it dings the score at
+    # half the rate of a full loaf but does NOT inflate the displayed Loafs total.
+    loaf_penalty = loafs + 0.5 * int(code_counts.get('LF', 0))
+    loaf_penalty_per30 = per30(loaf_penalty, snaps)
 
     base = 73.0
     # Excel-equivalent terms
@@ -144,7 +146,7 @@ def compute_row(r):
     )
     neg = (
         12.0 * drops_rate +
-        4.0  * loafs_per30 +
+        4.0  * loaf_penalty_per30 +
         9.0  * ma_per30
     )
 

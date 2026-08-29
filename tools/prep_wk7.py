@@ -14,15 +14,33 @@ import pandas as pd
 
 # Allow importing rubric.py from the project root when run as a script.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from rubric import loaf_units, parse_codes_to_points
 
 
 def count_list(x) -> int:
+    """Count discipline entries in a sheet cell.
+
+    Two formats appear across seasons: a clean count ("1", "2.0") or a
+    play-number list ("22,67,104" = 3 loafs at those plays). A single token
+    that is a clean number is treated as the count itself; a comma list is
+    counted one-per-item; a single non-numeric token like "hurt" is ignored.
+    """
     if isinstance(x, (int, float)) and not pd.isna(x):
         return int(x)
     if isinstance(x, str) and x.strip():
-        items = [t for t in (s.strip() for s in x.split(',')) if t and any(ch.isalnum() for ch in t)]
-        return len(items)
+        items = [t for t in (s.strip() for s in x.split(',')) if t]
+        if not items:
+            return 0
+        # Single token: a clean number IS the count ("2" = 2 loafs); a token
+        # with digits plus text is one play reference ("78(missed block)" = 1);
+        # a token with no digits is not a count ("hurt" = 0).
+        if len(items) == 1:
+            tok = items[0]
+            try:
+                return int(float(tok))
+            except ValueError:
+                return 1 if any(ch.isdigit() for ch in tok) else 0
+        # Comma list -> one event per item that looks like a play reference.
+        return sum(1 for t in items if any(ch.isdigit() for ch in t))
     return 0
 
 
@@ -114,19 +132,10 @@ def main():
     else:
         out['codes'] = ''
 
-    # When codes are present, derive MA and Loaf from the codes so the sheet's
-    # mixed-bag "Missed Assignment"/"Loaf" columns don't miscount. LF counts as
-    # half a loaf for discipline (matching the grader).
-    def derive_ma_loaf(codes_str):
-        if not isinstance(codes_str, str) or not codes_str.strip():
-            return None
-        _, counts, _, _, _ = parse_codes_to_points(codes_str)
-        return int(counts.get('MA', 0)), loaf_units(counts)
-
-    derived = out['codes'].apply(derive_ma_loaf)
-    mask_has_codes = derived.notna()
-    out.loc[mask_has_codes, 'missed_assignments'] = derived[mask_has_codes].apply(lambda x: x[0]).astype(int)
-    out.loc[mask_has_codes, 'loafs'] = derived[mask_has_codes].apply(lambda x: x[1]).astype(float)
+    # Discipline totals (MA, loafs) come from the sheet's dedicated columns via
+    # count_list; the grader reconciles them with code counts (MA/L/DP). We do
+    # NOT override them from codes here, because in older seasons the sheet
+    # columns hold the authoritative play lists while the codes may omit them.
 
     # Zero discipline stats when snaps == 0 to avoid false positives.
     try:

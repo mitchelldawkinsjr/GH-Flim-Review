@@ -145,8 +145,10 @@ def parse_codes_to_points(codes_str, warn_unknown: bool = False):
     Accepts forms like "143(E,P)", "61(C+16, FD, SC)", "54(C-2)", with
     parentheses/commas/semicolons/spaces as separators. Play-number prefixes
     (e.g. "143") are ignored. Variable yardage codes support both +N and -N.
-    Unknown tokens are ignored; when warn_unknown is True they are reported to
-    stderr so data-entry typos surface instead of silently dropping points.
+    A code attached to the same play more than once (e.g. when a play is listed
+    in both the ++ and -- columns) is counted once. Unknown tokens are ignored;
+    when warn_unknown is True they are reported to stderr so data-entry typos
+    surface instead of silently dropping points.
     """
     total = 0
     counts = {k: 0 for k in LEGEND_POINTS}
@@ -158,48 +160,60 @@ def parse_codes_to_points(codes_str, warn_unknown: bool = False):
     if not isinstance(codes_str, str) or not codes_str.strip():
         return total, counts, yards_c, yards_r, derived_keyplays
 
-    tokens = re.split(r'[\s,;]+', codes_str.replace('(', ' ').replace(')', ' '))
-    tokens = [t.strip() for t in tokens if t.strip()]
-    for t in tokens:
+    def account_token(t, seen):
+        nonlocal total, yards_c, yards_r, derived_keyplays
         m_c = PATTERN_CATCH_YARDS.match(t)
         if m_c:
             n = int(m_c.group('n')) * (-1 if m_c.group('sign') == '-' else 1)
             total += 0.5 * n
             yards_c += n
-            continue
+            return
         m_r = PATTERN_RUSH_YARDS.match(t)
         if m_r:
             n = int(m_r.group('n')) * (-1 if m_r.group('sign') == '-' else 1)
             total += 0.5 * n
             yards_r += n
-            continue
+            return
         m_bt = PATTERN_BT_YARDS.match(t)
         if m_bt:
             n = int(m_bt.group('n')) * (-1 if m_bt.group('sign') == '-' else 1)
             total += 0.5 * n
             counts['BT'] = counts.get('BT', 0) + 1
-            continue
-
+            return
         t_up = t.upper()
         if t_up in LEGEND_POINTS:
+            key = ('code', t_up)
+            if key in seen:
+                return
+            seen.add(key)
             total += LEGEND_POINTS[t_up]
             counts[t_up] += 1
             if t_up in POSITIVE_CODES_FOR_KEYPLAYS:
                 derived_keyplays += 1
         elif warn_unknown and not t_up.isdigit():
-            # A bare number is a play-number prefix, not a typo; only warn on
-            # genuinely unrecognized alphabetic tokens.
             print(f"WARNING: unrecognized code token {t!r} in {codes_str!r}", file=sys.stderr)
 
+    seen = set()
+    # Parse play-numbered segments "143(E,P)" and dedupe codes per play.
+    for m in re.finditer(r'(\d+)\s*\(([^)]*)\)', codes_str):
+        play = m.group(1)
+        for tok in re.split(r'[\s,;]+', m.group(2)):
+            tok = tok.strip()
+            if not tok:
+                continue
+            key = (play, tok.upper())
+            if key in seen:
+                continue
+            seen.add(key)
+            account_token(tok, seen)
+    # Parse any free-floating tokens outside parens (e.g. "ER C+12 FD").
+    remainder = re.sub(r'\d+\s*\([^)]*\)', ' ', codes_str)
+    for tok in re.split(r'[\s,;]+', remainder.replace('(', ' ').replace(')', ' ')):
+        tok = tok.strip()
+        if tok:
+            account_token(tok, seen)
+
     return total, counts, yards_c, yards_r, derived_keyplays
-
-
-def loaf_units(counts: dict) -> float:
-    """Discipline loaf units: each L is a full loaf, each LF is half a loaf."""
-    return (
-        LOAF_UNIT_L * counts.get('L', 0)
-        + LOAF_UNIT_LF * counts.get('LF', 0)
-    )
 
 
 def effective_drops(sheet_drops, counts: dict) -> int:
@@ -211,3 +225,22 @@ def effective_drops(sheet_drops, counts: dict) -> int:
         sheet = 0
     dp = int(counts.get('DP', 0))
     return max(sheet, dp)
+
+
+def effective_ma(sheet_ma, counts: dict) -> int:
+    """Reconcile the sheet Missed Assignment column with MA codes."""
+    try:
+        sheet = int(sheet_ma)
+    except Exception:
+        sheet = 0
+    return max(sheet, int(counts.get('MA', 0)))
+
+
+def effective_loafs(sheet_loafs, counts: dict) -> float:
+    """Reconcile the sheet Loaf column with L codes. LF (Lack of Focus) is a
+    separate code, not a loaf, so it does not feed the loaf discipline total."""
+    try:
+        sheet = float(sheet_loafs)
+    except Exception:
+        sheet = 0.0
+    return max(sheet, float(counts.get('L', 0)))
