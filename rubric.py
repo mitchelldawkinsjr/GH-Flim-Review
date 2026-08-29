@@ -57,10 +57,6 @@ CODE_LABELS = {
 # Codes that count as a positive key play.
 POSITIVE_CODES_FOR_KEYPLAYS = {"TD", "SC", "ER", "GR", "GB", "P", "FD", "E", "EP"}
 
-# A Lack-of-Focus (LF) counts as half a full loaf (L) for discipline.
-LOAF_UNIT_L = 1.0
-LOAF_UNIT_LF = 0.5
-
 # Variable-valued code patterns (support both +N and -N).
 PATTERN_CATCH_YARDS = re.compile(r'^C(?P<sign>[+-])(?P<n>\d+)$', flags=re.IGNORECASE)
 PATTERN_RUSH_YARDS = re.compile(r'^R(?P<sign>[+-])(?P<n>\d+)$', flags=re.IGNORECASE)

@@ -121,10 +121,8 @@ def compute_row(r):
     drops_rate = safe_div(drops, (catches + drops))
     loafs_per30 = per30(loafs, snaps)
     ma_per30 = per30(ma, snaps)
-    # LF (Lack of Focus) is a light ding on the grade: it dings the score at
-    # half the rate of a full loaf but does NOT inflate the displayed Loafs total.
-    loaf_penalty = loafs + 0.5 * int(code_counts.get('LF', 0))
-    loaf_penalty_per30 = per30(loaf_penalty, snaps)
+    # Loafs (L) are the grade killer. LF is key-play points only (-2) and
+    # does not feed the loaf-per-30 penalty.
 
     base = 73.0
     # Excel-equivalent terms
@@ -146,7 +144,7 @@ def compute_row(r):
     )
     neg = (
         12.0 * drops_rate +
-        4.0  * loaf_penalty_per30 +
+        4.0  * loafs_per30 +
         9.0  * ma_per30
     )
 
