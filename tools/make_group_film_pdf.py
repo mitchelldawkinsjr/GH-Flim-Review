@@ -61,19 +61,26 @@ def expand_codes_in_text(text: str) -> str:
     return text
 
 
+def _norm_header(s: str) -> str:
+    """Normalize a CSV header. Keep + and - so 'Key play ++' != 'Key play --'."""
+    return ''.join(ch.lower() for ch in s if ch.isalnum() or ch in '+-')
+
+
 def find_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
     cols = list(df.columns)
-    normalized = { ''.join(ch.lower() for ch in c if ch.isalnum()): c for c in cols }
+    by_lower = {str(c).strip().lower(): c for c in cols}
     for cand in candidates:
-        key = ''.join(ch.lower() for ch in cand if ch.isalnum())
+        if cand.strip().lower() in by_lower:
+            return by_lower[cand.strip().lower()]
+    normalized = {}
+    for c in cols:
+        key = _norm_header(c)
+        if key and key not in normalized:
+            normalized[key] = c
+    for cand in candidates:
+        key = _norm_header(cand)
         if key in normalized:
             return normalized[key]
-    # try startswith/contains loose matching
-    for c in cols:
-        lc = c.lower()
-        for cand in candidates:
-            if cand.lower() in lc:
-                return c
     return None
 
 
