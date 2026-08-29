@@ -357,7 +357,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
         <div class=\"table-wrap\">{table(rate_rows)}</div>
       </div>
     </div>
-    {f'<h2>AI Weekly Summary</h2><p style="font-style: italic; line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">{ai_summary}</p>' if ai_summary else ''}
+    {f'<h2>Weekly Summary</h2><p style="font-style: italic; line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">{ai_summary}</p>' if ai_summary else ''}
     <h2>Code Counts</h2>
     <div class=\"table-wrap\">{codes_table}</div>
     {insights_html}
