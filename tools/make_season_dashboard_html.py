@@ -95,7 +95,7 @@ def build_season_narrative(player: str, totals: dict, rates: dict, code_counts: 
     touchdowns = int(totals.get('touchdowns', 0))
     drops = int(totals.get('drops', 0))
     ma = int(totals.get('ma', 0))
-    loafs = int(totals.get('loafs', 0))
+    loafs = float(totals.get('loafs', 0))
     games = max(1, int(totals.get('games', 1)))
 
     fd_cnt = int(code_counts.get('FD', 0))
@@ -197,7 +197,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
         ("Touchdowns", totals['touchdowns']),
         ("Drops", totals['drops']),
         ("Missed Assignments", totals['ma']),
-        ("Loafs", totals['loafs']),
+        ("Loafs", f"{totals['loafs']:g}"),
         ("Key Plays Points", f"{totals['code_points']:.1f}"),
         ("Games", totals['games']),
     ]
@@ -350,6 +350,8 @@ def main():
 
         def sum_int(col):
             return int(pd.to_numeric(sub.get(col, 0), errors='coerce').fillna(0).sum())
+        def sum_float(col):
+            return float(pd.to_numeric(sub.get(col, 0.0), errors='coerce').fillna(0.0).sum())
 
         snaps = sum_int('snaps')
         targets = sum_int('targets')
@@ -359,7 +361,7 @@ def main():
         touchdowns = sum_int('touchdowns')
         drops = sum_int('drops')
         ma = sum_int('missed_assignments')
-        loafs = sum_int('loafs')
+        loafs = sum_float('loafs')
         code_points = float(pd.to_numeric(sub.get('code_points', 0.0), errors='coerce').fillna(0.0).sum())
         games = int(sub['week'].nunique()) if 'week' in sub.columns else len(sub.index)
         rushes_total = 0

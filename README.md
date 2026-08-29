@@ -10,7 +10,7 @@ A data pipeline and static site generator for weekly and season-long player eval
 ```bash
 python3 -m venv venv
 ./venv/bin/pip install -U pip
-./venv/bin/pip install pandas reportlab pypdf pillow openpyxl numpy
+./venv/bin/pip install pandas reportlab
 ```
 
 2) Prepare weekly CSV (example: Week 7):

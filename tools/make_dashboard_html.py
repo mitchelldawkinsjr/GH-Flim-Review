@@ -94,7 +94,7 @@ def build_coach_review(player: str, totals: dict, rates: dict, code_counts: dict
     tds = int(totals.get('touchdowns', 0))
     drops = int(totals.get('drops', 0))
     ma = int(totals.get('ma', 0))
-    loafs = int(totals.get('loafs', 0))
+    loafs = float(totals.get('loafs', 0))
     letter = rates.get('grade', '')
     score = float(rates.get('score', 0.0))
     catch_rate_pct = f"{rates.get('catch_rate', 0.0)*100:.1f}%"
@@ -275,7 +275,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
         ("Touchdowns", totals['touchdowns']),
         ("Drops", totals['drops']),
         ("Missed Assignments", totals['ma']),
-        ("Loafs", totals['loafs']),
+        ("Loafs", f"{totals['loafs']:g}"),
         ("Key Plays Points", f"{totals['code_points']:.1f}"),
     ]
 
@@ -426,7 +426,7 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
                     return 0.0
         snaps = sum_int('snaps'); targets = sum_int('targets'); catches = sum_int('catches')
         rec_yards = sum_int('rec_yards'); rush_yards = sum_int('rush_yards'); touchdowns = sum_int('touchdowns')
-        drops = sum_int('drops'); ma = sum_int('missed_assignments'); loafs = sum_int('loafs')
+        drops = sum_int('drops'); ma = sum_int('missed_assignments'); loafs = sum_float('loafs')
         code_points = sum_float('code_points')
         # Catch rate: catches / (catches + drops)
         catch_rate = safe_div(catches, (catches + drops))

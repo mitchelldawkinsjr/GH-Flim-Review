@@ -65,11 +65,11 @@ def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
         rcls = 's2' if zebra % 2 == 1 else 's4'
         drops_cell = str(r['drops'])
         ma_cell = str(r['missed_assignments'])
-        loaf_cell = str(r['loafs'])
+        loaf_cell = f"{float(r['loafs']):g}"
         rushes_cell = str(r.get('rushes', 0))
         key_points_cell = f"{r['key_points']:.1f}" if isinstance(r['key_points'], float) else str(r['key_points'])
         grade_cell = str(int(round(float(r['score']))))
-        total_loafs += safe_int(r['loafs'])
+        total_loafs += float(r['loafs'])
         scores.append(float(r['score']))
         # Accumulate totals
         totals['snaps'] += safe_int(r['snaps'])
@@ -81,7 +81,7 @@ def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
         totals['rush_yards'] += safe_int(r['rush_yards'])
         totals['touchdowns'] += safe_int(r['touchdowns'])
         totals['missed_assignments'] += safe_int(r['missed_assignments'])
-        totals['loafs'] += safe_int(r['loafs'])
+        totals['loafs'] += float(r['loafs'])
         try:
             totals['key_points'] += float(r['key_points'])
         except Exception:
@@ -125,7 +125,7 @@ def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
         f"<td class=\"s1\" dir=\"ltr\">{totals['rush_yards']}</td>"
         f"<td class=\"s1\" dir=\"ltr\">{totals['touchdowns']}</td>"
         f"<td class=\"s2\" dir=\"ltr\">{totals['missed_assignments']}</td>"
-        f"<td class=\"s2\" dir=\"ltr\">{totals['loafs']}</td>"
+        f"<td class=\"s2\" dir=\"ltr\">{totals['loafs']:g}</td>"
         f"<td class=\"s2\" dir=\"ltr\">{totals['key_points']:.1f}</td>"
         '<td class="s2" dir="ltr"></td>'
         '<td></td>'
@@ -139,7 +139,7 @@ def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
         '<td></td><td></td><td></td><td></td><td></td>'
         '</tr>'
         '<tr style="height: 19px">'
-        f'<td class="s2" dir="ltr">{total_loafs}</td>'
+        f'<td class="s2" dir="ltr">{total_loafs:g}</td>'
         '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'
         '<td></td><td></td><td></td><td></td><td></td>'
         '</tr>'

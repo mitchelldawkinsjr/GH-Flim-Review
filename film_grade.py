@@ -29,40 +29,27 @@ import re
 from pathlib import Path
 import math
 
+from rubric import (
+    LEGEND_POINTS,
+    CODE_LABELS,
+    POSITIVE_CODES_FOR_KEYPLAYS,
+    safe_div,
+    per30,
+    clamp,
+    letter,
+    parse_codes_to_points,
+    loaf_units,
+    effective_drops,
+    fmt_count,
+)
+
 # Required base stats; key_plays is optional since we'll derive it from codes when missing
 REQUIRED_COLS_BASE = [
     "player","week","snaps","targets","catches","rec_yards","rush_yards",
     "touchdowns","drops","missed_assignments","loafs"
 ]
 
-# Legend point values
-LEGEND_POINTS = {
-    "TD": 15,
-    "E": 5,
-    "ER": 7,
-    "GR": 2,
-    "GB": 2,
-    "P": 10,
-    "FD": 5,
-    "MA": -10,
-    "SC": 10,
-    "DP": -15,
-    "H": 0,
-    "BR": -2,
-    "L": -2,
-    "NFS": -3,
-    "W": -1,
-    "LF": -0.5,
-    "BBL": -0.5,
-    "EP": 2,
-}
-
-POSITIVE_CODES_FOR_KEYPLAYS = {"TD","SC","ER","GR","GB","P","FD","E","EP"}
-
-# Patterns for variable-valued codes
-PATTERN_CATCH_YARDS = re.compile(r'^(?:\(?\s*)?C\+(?P<n>-?\d+)(?:\s*\)?)?$', flags=re.IGNORECASE)
-PATTERN_RUSH_YARDS = re.compile(r'^(?:\(?\s*)?R\+(?P<n>-?\d+)(?:\s*\)?)?$', flags=re.IGNORECASE)
-PATTERN_BT_YARDS = re.compile(r'^(?:\(?\s*)?BT\+(?P<n>-?\d+)(?:\s*\)?)?$', flags=re.IGNORECASE)
+# Legend point values, patterns, and helpers live in rubric.py (imported above).
 
 def normalize_cols(df):
     def norm(c):
@@ -79,91 +66,6 @@ def ensure_columns(df):
                          f"Found columns: {list(df.columns)}")
     return df
 
-def safe_div(n, d):
-    try:
-        n = float(n)
-        d = float(d)
-        if d == 0:
-            return 0.0
-        return n / d
-    except Exception:
-        return 0.0
-
-def per30(n, snaps):
-    try:
-        snaps = float(snaps)
-        n = float(n)
-        if snaps <= 0:
-            return 0.0
-        return n * 30.0 / snaps
-    except Exception:
-        return 0.0
-
-def clamp(x, lo=0.0, hi=100.0):
-    return max(lo, min(hi, x))
-
-def letter(score):
-    if score >= 90: return "A"
-    if score >= 80: return "B"
-    if score >= 70: return "C"
-    if score >= 60: return "D"
-    return "F"
-
-def parse_codes_to_points(codes_str):
-    """
-    Parse a codes string and compute:
-      - total code points
-      - per-code counts (dict)
-      - yards from C+N and R+N
-      - derived_keyplays (count of positive-impact codes)
-    Accepts formats like "(ER) (C+12) (FD)" or "ER; C+12; FD" or "ER C+12 FD"
-    and can handle mixed parentheses/commas/semicolons.
-    """
-    total = 0
-    counts = {k: 0 for k in LEGEND_POINTS.keys()}
-    yards_c = 0
-    yards_r = 0
-    yards_bt = 0
-    derived_keyplays = 0
-
-    if not isinstance(codes_str, str) or not codes_str.strip():
-        return total, counts, yards_c, yards_r, derived_keyplays
-
-    tokens = re.split(r'[\s,;]+', codes_str.replace('(', ' ').replace(')', ' '))
-    tokens = [t.strip() for t in tokens if t.strip()]
-    for t in tokens:
-        m_c = PATTERN_CATCH_YARDS.match(t)
-        if m_c:
-            n = int(m_c.group('n'))
-            total += 0.5 * n
-            yards_c += n
-            continue
-        m_r = PATTERN_RUSH_YARDS.match(t)
-        if m_r:
-            n = int(m_r.group('n'))
-            total += 0.5 * n
-            yards_r += n
-            continue
-        m_bt = PATTERN_BT_YARDS.match(t)
-        if m_bt:
-            n = int(m_bt.group('n'))
-            total += 0.5 * n
-            yards_bt += n
-            # count BT occurrence for code counts table
-            try:
-                counts['BT'] = counts.get('BT', 0) + 1
-            except Exception:
-                counts['BT'] = 1
-            continue
-
-        t_up = t.upper()
-        if t_up in LEGEND_POINTS:
-            total += LEGEND_POINTS[t_up]
-            counts[t_up] += 1
-            if t_up in POSITIVE_CODES_FOR_KEYPLAYS:
-                derived_keyplays += 1
-
-    return total, counts, yards_c, yards_r, derived_keyplays
 
 def compute_row(r):
     snaps = r.get('snaps', 0)
@@ -188,17 +90,27 @@ def compute_row(r):
         loafs = 0
 
     # Parse codes for points and a derived key play count
-    code_points, code_counts, code_catch_yards, code_rush_yards, derived_kp = parse_codes_to_points(codes_str)
-    # If codes are provided, set discipline tallies exactly from code counts to avoid mismatches
+    code_points, code_counts, code_catch_yards, code_rush_yards, derived_kp = parse_codes_to_points(codes_str, warn_unknown=True)
+    # If codes are provided, set discipline tallies from code counts to avoid mismatches.
+    # LF counts as half a loaf for discipline; drops reconcile the sheet column with DP codes.
     if isinstance(codes_str, str) and codes_str.strip():
         try:
             ma = int(code_counts.get('MA', 0))
-            loafs = int(code_counts.get('L', 0))
+            loafs = loaf_units(code_counts)
         except Exception:
             pass
+    drops = effective_drops(drops, code_counts)
 
-    # Use provided key_plays if present and >0, else fallback to derived
-    keyplays = keyplays_in if (isinstance(keyplays_in, (int,float)) and keyplays_in > 0) else derived_kp
+    # Re-apply the no-snaps guard after the codes override so codes can't
+    # resurrect discipline stats for a player who never saw the field.
+    if snaps_val <= 0:
+        ma = 0
+        loafs = 0
+        drops = 0
+
+    # Use provided key_plays if present and >0, else fallback to derived.
+    # An explicit 0 is treated as "missing" so it never blocks the derived count.
+    keyplays = keyplays_in if (isinstance(keyplays_in, (int, float)) and keyplays_in and keyplays_in > 0) else derived_kp
 
     # Core rates
     # Catch rate on catchable balls only: catches / (catches + drops)
@@ -256,6 +168,12 @@ def compute_row(r):
         'code_catch_yards': code_catch_yards,
         'code_rush_yards': code_rush_yards,
         'derived_keyplays': derived_kp,
+        # Reconciled discipline totals actually used in scoring (LF counts as
+        # 0.5 loaf; drops reconcile the sheet column with DP codes). Surfacing
+        # these keeps the displayed totals consistent with the grade.
+        'drops_eff': drops,
+        'ma_eff': ma,
+        'loafs_eff': loafs,
         **flat_counts
     }
 
@@ -272,7 +190,7 @@ def make_reports(out_df, reports_dir='reports', by_player='player', by_week='wee
         touchdowns = int(g['touchdowns'].sum())
         drops = int(g['drops'].sum())
         ma = int(g['missed_assignments'].sum())
-        loafs = int(g['loafs'].sum())
+        loafs = float(g['loafs'].sum())
         # Prefer input key_plays if present, else derived
         keyplays = int(g['key_plays'].sum()) if 'key_plays' in g.columns else int(g['derived_keyplays'].sum())
 
@@ -287,7 +205,7 @@ def make_reports(out_df, reports_dir='reports', by_player='player', by_week='wee
         lines.append(f"PLAYER REVIEW — {player} — Week {week}")
         lines.append("=" * 60)
         lines.append(f"Summary: Grade {letter_grade} ({avg_score:.1f})  |  Snaps {snaps}  |  Tgts {targets}  |  Rec {catches} for {rec_yards} yds  |  Rush {rush_yards} yds  |  TD {touchdowns}")
-        lines.append(f"Discipline: Drops {drops}  |  MAs {ma}  |  Loafs {loafs} ")
+        lines.append(f"Discipline: Drops {drops}  |  MAs {ma}  |  Loafs {fmt_count(loafs)} ")
         lines.append(f"Key Plays Points (sum): {total_code_points}")
         lines.append("")
 
@@ -353,12 +271,14 @@ def main():
     ap.add_argument('--by', default='player', help='Column to aggregate by for summary (default: player)')
     args = ap.parse_args()
 
-    # Read raw to inspect original column names for key play ++/--
-    df_raw = pd.read_csv(args.csv)
+    # Read raw to inspect original column names for key play ++/-- (handle BOM)
+    df_raw = pd.read_csv(args.csv, encoding='utf-8-sig')
 
-    # Merge "key play ++" and "key play --" into a single 'codes' column if present
+    # Merge "key play ++" and "key play --" into a single 'codes' column if present.
+    # Also support the legacy singular "key play" column.
     pos_col = next((c for c in df_raw.columns if c.strip().lower() == 'key play ++'), None)
     neg_col = next((c for c in df_raw.columns if c.strip().lower() == 'key play --'), None)
+    single_col = next((c for c in df_raw.columns if c.strip().lower() == 'key play'), None)
     if pos_col or neg_col:
         pos_vals = df_raw[pos_col].fillna('') if pos_col else ''
         neg_vals = df_raw[neg_col].fillna('') if neg_col else ''
@@ -368,6 +288,11 @@ def main():
             df_raw['codes'] = (df_raw['codes'].fillna('') + ' ' + combined).str.strip()
         else:
             df_raw['codes'] = combined
+    elif single_col:
+        if 'codes' in df_raw.columns:
+            df_raw['codes'] = (df_raw['codes'].fillna('') + ' ' + df_raw[single_col].fillna('').astype(str)).str.strip()
+        else:
+            df_raw['codes'] = df_raw[single_col].fillna('').astype(str)
 
     # Normalize after we've built the codes column
     df = normalize_cols(df_raw)
@@ -377,6 +302,12 @@ def main():
 
     # Compute row-wise metrics
     calc_rows = df.apply(compute_row, axis=1, result_type='expand')
+    # Overwrite the sheet discipline totals with the reconciled values used in
+    # scoring so displayed totals match the grade.
+    df['drops'] = calc_rows['drops_eff'].values
+    df['missed_assignments'] = calc_rows['ma_eff'].values
+    df['loafs'] = calc_rows['loafs_eff'].values
+    calc_rows = calc_rows.drop(columns=['drops_eff', 'ma_eff', 'loafs_eff'])
     out = pd.concat([df, calc_rows], axis=1)
 
     # Order columns

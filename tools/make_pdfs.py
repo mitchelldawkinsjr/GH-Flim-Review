@@ -518,12 +518,12 @@ def main():
             for _, r in df.iterrows():
                 player = str(r.get('player','')).strip()
                 week = str(r.get('week','')).strip()
-                notes = str(r.get('notes','')).strip()
-                codes_str = str(r.get('codes',''))
-                if player and week:
+                notes = '' if pd.isna(r.get('notes')) else str(r.get('notes')).strip()
+                codes_str = '' if pd.isna(r.get('codes')) else str(r.get('codes'))
+                if player and week and player.lower() not in ('nan', 'none'):
                     key = (player.lower(), week)
                     # Notes aggregation
-                    if notes:
+                    if notes and notes.lower() != 'nan':
                         prev = player_notes_index.get(key, '')
                         player_notes_index[key] = (prev + ('; ' if prev else '') + notes).strip()
                     # Extract MA and L play numbers from codes like "54(MA)" or "69(L)"

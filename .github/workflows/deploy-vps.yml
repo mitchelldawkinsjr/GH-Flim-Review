@@ -129,7 +129,6 @@ jobs:
           rsync -avz --delete \
             --exclude '.git' \
             --exclude '.env' \
-            --exclude 'monolith/' \
             --exclude 'venv/' \
             --exclude '__pycache__/' \
             ./ ${VPS_USER}@${VPS_HOST}:/opt/360ws/clients/docker-app/flim-review/

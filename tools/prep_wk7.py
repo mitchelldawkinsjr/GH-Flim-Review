@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
-import pandas as pd
-import numpy as np
-from pathlib import Path
+"""Prepare a raw weekly film CSV for grading.
+
+Builds a normalized intermediate CSV with a single `codes` column merged from
+the sheet's key-play columns, derives discipline tallies from the codes, and
+drops the legend/total/group-notes footer rows that aren't player data.
+"""
 import argparse
 import re
+import sys
+from pathlib import Path
 
+import pandas as pd
 
-def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    norm = lambda c: ''.join(ch for ch in c.lower() if ch.isalnum() or ch=='_').replace('__','_').strip('_')
-    return df.rename(columns={c: norm(c) for c in df.columns})
+# Allow importing rubric.py from the project root when run as a script.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from rubric import loaf_units, parse_codes_to_points
 
 
 def count_list(x) -> int:
@@ -37,6 +43,27 @@ def find_column(df: pd.DataFrame, *names: str) -> str | None:
     return None
 
 
+def is_player_row(player_val) -> bool:
+    """True when a row represents a real player, not a legend/total/footer row."""
+    if player_val is None:
+        return False
+    s = str(player_val).strip()
+    if not s or s.lower() in ('nan', 'none'):
+        return False
+    # Footer markers that appear in the Player column of legend/total rows.
+    if s.lower() in ('total snaps', 'code', 'totals'):
+        return False
+    # Legend rows start the code table: ",(TD),Touchdown,15,..." -> player cell
+    # is empty or a bare code like "(TD)". Skip rows whose player cell is a
+    # parenthesized code or a known legend keyword.
+    if re.fullmatch(r'\(?[A-Za-z]{2,}\)?', s) and s.lower() in {
+        'td', 'e', 'er', 'gr', 'gb', 'p', 'fd', 'ma', 'sc', 'dp', 'h', 'br',
+        'l', 'nfs', 'w', 'bt', 'lf', 'bbl', 'ep',
+    }:
+        return False
+    return True
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('in_csv')
@@ -44,15 +71,18 @@ def main():
     ap.add_argument('--week', type=int, required=True)
     args = ap.parse_args()
 
-    df_raw = strip_headers(pd.read_csv(args.in_csv))
+    df_raw = strip_headers(pd.read_csv(args.in_csv, encoding='utf-8-sig'))
     player_col = find_column(df_raw, 'Player', 'Name')
     if not player_col:
         raise SystemExit(
             f"Missing Player/Name column. Found: {list(df_raw.columns)}"
         )
 
-    # Build output DataFrame from exact original headers
+    # Keep only real player rows; drop legend/total/group-notes footer.
+    df_raw = df_raw[df_raw[player_col].apply(is_player_row)].reset_index(drop=True)
+
     get_num = lambda col: pd.to_numeric(df_raw.get(col, 0), errors='coerce').fillna(0).astype(int)
+
     def get_txt(col):
         if col not in df_raw.columns:
             return pd.Series('', index=df_raw.index)
@@ -69,37 +99,36 @@ def main():
         'touchdowns': get_num('Touchdowns'),
         'drops': get_num('Drops'),
         'missed_assignments': get_txt('Missed Assignment').apply(count_list).astype(int),
-        'loafs': get_txt('Loaf').apply(count_list).astype(int),
+        'loafs': get_txt('Loaf').apply(count_list).astype(float),
         'notes': get_txt('Notes'),
     })
 
-    # Merge key play ++/-- into codes
-    pos_vals = get_txt('Key play ++')
-    neg_vals = get_txt('Key play --')
-    out['codes'] = (pos_vals + ' ' + neg_vals).str.strip()
+    # Merge key play ++/-- into codes; support the legacy singular "key play" column.
+    pos_col = find_column(df_raw, 'Key play ++')
+    neg_col = find_column(df_raw, 'Key play --')
+    single_col = find_column(df_raw, 'Key play')
+    if pos_col or neg_col:
+        out['codes'] = (get_txt(pos_col) + ' ' + get_txt(neg_col)).str.strip()
+    elif single_col:
+        out['codes'] = get_txt(single_col).str.strip()
+    else:
+        out['codes'] = ''
 
-    # If codes present, derive MA and Loaf directly from codes to avoid sheet mismatches
-    def derive_ma_loaf(codes_str: str) -> tuple[int, int] | None:
+    # When codes are present, derive MA and Loaf from the codes so the sheet's
+    # mixed-bag "Missed Assignment"/"Loaf" columns don't miscount. LF counts as
+    # half a loaf for discipline (matching the grader).
+    def derive_ma_loaf(codes_str):
         if not isinstance(codes_str, str) or not codes_str.strip():
             return None
-        ma_cnt = 0
-        loaf_cnt = 0
-        for m in re.finditer(r'(\d+)\s*\(([^)]*)\)', codes_str):
-            inside = m.group(2).upper()
-            tokens = [t.strip() for t in inside.split(',') if t.strip()]
-            for t in tokens:
-                if t == 'MA':
-                    ma_cnt += 1
-                elif t == 'L':
-                    loaf_cnt += 1
-        return ma_cnt, loaf_cnt
+        _, counts, _, _, _ = parse_codes_to_points(codes_str)
+        return int(counts.get('MA', 0)), loaf_units(counts)
 
     derived = out['codes'].apply(derive_ma_loaf)
     mask_has_codes = derived.notna()
     out.loc[mask_has_codes, 'missed_assignments'] = derived[mask_has_codes].apply(lambda x: x[0]).astype(int)
-    out.loc[mask_has_codes, 'loafs'] = derived[mask_has_codes].apply(lambda x: x[1]).astype(int)
+    out.loc[mask_has_codes, 'loafs'] = derived[mask_has_codes].apply(lambda x: x[1]).astype(float)
 
-    # Finally, zero discipline stats when snaps == 0 to avoid false positives
+    # Zero discipline stats when snaps == 0 to avoid false positives.
     try:
         out.loc[out['snaps'] <= 0, ['missed_assignments', 'loafs']] = 0
     except Exception:
@@ -111,5 +140,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-

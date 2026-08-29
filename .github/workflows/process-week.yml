@@ -60,7 +60,7 @@ jobs:
       - name: Install pipeline dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas reportlab pypdf pillow openpyxl numpy
+          pip install pandas reportlab
 
       - name: List CSVs to process
         id: csvs
