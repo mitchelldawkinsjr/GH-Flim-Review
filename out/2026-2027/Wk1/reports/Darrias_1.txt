@@ -1,11 +1,13 @@
 PLAYER REVIEW — Darrias — Week 1
 ============================================================
-Summary: Grade D (62.0)  |  Snaps 35  |  Tgts 2  |  Rec 0 for 0 yds  |  Rush 9 yds  |  TD 0
+Summary: Grade D (65.0)  |  Snaps 35  |  Tgts 2  |  Rec 0 for 0 yds  |  Rush 9 yds  |  TD 0
 Discipline: Drops 0  |  MAs 2  |  Loafs 1 
-Key Plays Points (sum): -15.5
+Key Plays Points (sum): -8.5
 
 WHAT YOU DID WELL
+  • GR: x1  (+2)
   • GB: x1  (+2)
+  • E: x1  (+5)
 
 WHERE TO IMPROVE
   • MA: x2  (-20)

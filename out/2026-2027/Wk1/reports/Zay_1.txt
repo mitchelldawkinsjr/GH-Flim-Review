@@ -1,8 +1,8 @@
 PLAYER REVIEW — Zay — Week 1
 ============================================================
-Summary: Grade A (98.6)  |  Snaps 47  |  Tgts 8  |  Rec 6 for 82 yds  |  Rush 0 yds  |  TD 1
-Discipline: Drops 1  |  MAs 1  |  Loafs 1 
-Key Plays Points (sum): 117.0
+Summary: Grade A (96.0)  |  Snaps 47  |  Tgts 8  |  Rec 6 for 82 yds  |  Rush 0 yds  |  TD 1
+Discipline: Drops 1  |  MAs 1  |  Loafs 2 
+Key Plays Points (sum): 112.0
 
 WHAT YOU DID WELL
   • SC: x4  (+40)
@@ -15,8 +15,8 @@ WHAT YOU DID WELL
   • E: x1  (+5)
 
 WHERE TO IMPROVE
+  • L: x2  (-10)
   • MA: x1  (-10)
-  • L: x1  (-5)
   • LF: x1  (-2)
 
 COACHING POINTS
