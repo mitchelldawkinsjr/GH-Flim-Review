@@ -245,6 +245,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
     h2 { margin-top: 24px; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .small { color: var(--muted); font-size: 12px; }
+    sub { font-size: 0.72em; color: var(--muted); font-weight: 400; }
     .breadcrumbs { font-size: 12px; color: #666; margin-bottom: 8px; }
     .breadcrumbs a { color: var(--primary); text-decoration: none; }
     .breadcrumbs a:hover { text-decoration: underline; }
@@ -271,6 +272,7 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
         ("Targets", totals['targets']),
         ("Catches", totals['catches']),
         ("Rec Yards", totals['rec_yards']),
+        ("Rushes", totals['rushes']),
         ("Rush Yards", totals['rush_yards']),
         ("Touchdowns", totals['touchdowns']),
         ("Drops", totals['drops']),
@@ -282,12 +284,12 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
     rate_rows = [
         ("Catch Rate", f"{rates['catch_rate']*100:.1f}%"),
         ("Yards per Target", f"{rates['ypt']:.2f}"),
-        ("Targets per 30", f"{rates['targets_per30']:.2f}"),
-        ("Key Plays per 30", f"{rates['keyplays_per30']:.2f}"),
-        ("TDs per 30", f"{rates['tds_per30']:.2f}"),
+        ("Targets per 30<sub>snaps</sub>", f"{rates['targets_per30']:.2f}"),
+        ("Key Plays per 30<sub>snaps</sub>", f"{rates['keyplays_per30']:.2f}"),
+        ("TDs per 30<sub>snaps</sub>", f"{rates['tds_per30']:.2f}"),
         ("Drops Rate", f"{rates['drops_rate']*100:.1f}%"),
-        ("Missed Assignments per 30", f"{rates['ma_per30']:.2f}"),
-        ("Loafs per 30", f"{rates['loafs_per30']:.2f}"),
+        ("Missed Assignments per 30<sub>snaps</sub>", f"{rates['ma_per30']:.2f}"),
+        ("Loafs per 30<sub>snaps</sub>", f"{rates['loafs_per30']:.2f}"),
     ]
 
     merged_counts = {k: int(code_counts.get(k, 0) or 0) for k in CODE_LABELS}
@@ -299,10 +301,11 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
                 merged_counts[k] = v
     codes_rows = sorted(merged_counts.items(), key=lambda kv: kv[1], reverse=True)
 
-    def table(rows):
+    def table(rows, escape_key=True):
         html_rows = ["<table>", "<tr><th>Metric</th><th>Value</th></tr>"]
         for k, v in rows:
-            html_rows.append(f"<tr><td>{html.escape(str(k))}</td><td>{html.escape(str(v))}</td></tr>")
+            key_html = html.escape(str(k)) if escape_key else str(k)
+            html_rows.append(f"<tr><td>{key_html}</td><td>{html.escape(str(v))}</td></tr>")
         html_rows.append("</table>")
         return "\n".join(html_rows)
 
@@ -354,11 +357,11 @@ def render_player_html(player: str, totals: dict, rates: dict, code_counts: dict
       </div>
       <div>
         <h2>Rates (from totals)</h2>
-        <div class=\"table-wrap\">{table(rate_rows)}</div>
+        <div class=\"table-wrap\">{table(rate_rows, escape_key=False)}</div>
       </div>
     </div>
     {f'<h2>Weekly Summary</h2><p style="font-style: italic; line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">{ai_summary}</p>' if ai_summary else ''}
-    <h2>Code Counts</h2>
+    <h2>Key Plays</h2>
     <div class=\"table-wrap\">{codes_table}</div>
     {insights_html}
     {build_coach_review(player, totals, rates, code_counts)}
@@ -425,7 +428,7 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
                 except Exception:
                     return 0.0
         snaps = sum_int('snaps'); targets = sum_int('targets'); catches = sum_int('catches')
-        rec_yards = sum_int('rec_yards'); rush_yards = sum_int('rush_yards'); touchdowns = sum_int('touchdowns')
+        rec_yards = sum_int('rec_yards'); rush_yards = sum_int('rush_yards'); rushes = sum_int('rushes'); touchdowns = sum_int('touchdowns')
         drops = sum_int('drops'); ma = sum_int('missed_assignments'); loafs = sum_float('loafs')
         code_points = sum_float('code_points')
         # Catch rate: catches / (catches + drops)
@@ -445,7 +448,7 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
         except Exception:
             score = 0.0
         letter_grade = letter(score)
-        totals = {'snaps': snaps,'targets': targets,'catches': catches,'rec_yards': rec_yards,'rush_yards': rush_yards,'touchdowns': touchdowns,'drops': drops,'ma': ma,'loafs': loafs,'code_points': code_points}
+        totals = {'snaps': snaps,'targets': targets,'catches': catches,'rec_yards': rec_yards,'rushes': rushes,'rush_yards': rush_yards,'touchdowns': touchdowns,'drops': drops,'ma': ma,'loafs': loafs,'code_points': code_points}
         rates = {'catch_rate': catch_rate,'ypt': ypt,'targets_per30': targets_per30,'keyplays_per30': keyplays_per30,'tds_per30': tds_per30,'drops_rate': drops_rate,'ma_per30': ma_per30,'loafs_per30': loafs_per30,'score': score,'grade': letter_grade}
         codes = collect_code_counts(sub)
         note_signals = _extract_note_signals(sub)

@@ -74,6 +74,7 @@ def compute_row(r):
     targets = r.get('targets', 0)
     catches = r.get('catches', 0)
     rec_yards = r.get('recyards', r.get('rec_yards', 0))
+    rushes = r.get('rushes', 0)
     rush_yards = r.get('rushyards', r.get('rush_yards', 0))
     touchdowns = r.get('touchdowns', 0)
     drops = r.get('drops', 0)
@@ -317,7 +318,7 @@ def main():
 
     # Order columns
     preferred_order = [
-        'player','week','snaps','targets','catches','rec_yards','rush_yards',
+        'player','week','snaps','targets','catches','rec_yards','rushes','rush_yards',
         'touchdowns','drops','missed_assignments','loafs','key_plays','codes',
         'code_points','derived_keyplays',
         'catch_rate','yards_per_target','targets_per30','keyplays_per30',

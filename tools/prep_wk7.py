@@ -113,6 +113,7 @@ def main():
         'targets': get_num('Targets'),
         'catches': get_num('Catches'),
         'rec_yards': get_num('Rec Yards'),
+        'rushes': get_num('Rushes'),
         'rush_yards': get_num('Rush Yards'),
         'touchdowns': get_num('Touchdowns'),
         'drops': get_num('Drops'),
