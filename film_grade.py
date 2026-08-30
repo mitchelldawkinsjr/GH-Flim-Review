@@ -128,7 +128,9 @@ def compute_row(r):
     base = 73.0
     # Excel-equivalent terms
     yards_term = 1.5 * min(safe_div(yards_per_target, 8.0), 1.0)
-    tds_term = 12.0 * min(tds_per30, 1.0)
+    # TDs scale linearly (no cap) so stacking scores keeps raising the grade;
+    # the 100 clamp is the ceiling. Effort stays tier-capped (see keyplays_term).
+    tds_term = 12.0 * tds_per30
     # Key-play tier: positive discrete code points per 30 (effort + production),
     # excluding yardage (rewarded via yards_term/catch_rate). Tiered so effort
     # can recover points lost to a drop/MA but is capped short of an A.
