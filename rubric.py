@@ -172,9 +172,12 @@ def parse_codes_to_points(codes_str, warn_unknown: bool = False):
             return
         m_bt = PATTERN_BT_YARDS.match(t)
         if m_bt:
+            # For BT the +N is a COUNT of broken tackles on the play, not yards.
             n = int(m_bt.group('n')) * (-1 if m_bt.group('sign') == '-' else 1)
+            if n < 0:
+                n = 0
             total += 0.5 * n
-            counts['BT'] = counts.get('BT', 0) + 1
+            counts['BT'] = counts.get('BT', 0) + n
             return
         t_up = t.upper()
         if t_up in LEGEND_POINTS:
