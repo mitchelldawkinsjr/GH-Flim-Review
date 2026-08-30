@@ -14,7 +14,7 @@ import sys
 LEGEND_POINTS = {
     "TD": 15,
     "E": 5,
-    "ER": 7,
+    "ER": 5,
     "GR": 2,
     "GB": 2,
     "P": 14,
