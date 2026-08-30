@@ -6,6 +6,21 @@
   <title>Film Review Hub - Select Season</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   
+  <script>
+  (function(){
+    var GA_ID = 'G-T7Q2ZL7300';
+    if (navigator.doNotTrack == '1' || window.doNotTrack == '1') return;
+    var s=document.createElement('script'); s.async=1;
+    s.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;
+    document.head.appendChild(s);
+    window.dataLayer=window.dataLayer||[];
+    function gtag(){dataLayer.push(arguments);}
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', GA_ID, { anonymize_ip: true });
+  })();
+  </script>
+        
   <style>
     :root {
       --bg: #f5f7fb;
