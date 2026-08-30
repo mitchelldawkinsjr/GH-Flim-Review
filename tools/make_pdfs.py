@@ -9,52 +9,12 @@ from pathlib import Path
 import argparse
 import csv
 import re
+import sys
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-CODE_LABELS = {
-    'TD': 'Touchdown',
-    'E': 'Relentless Effort',
-    'ER': 'Elite Route',
-    'GR': 'Good Route',
-    'GB': 'Good Block',
-    'P': 'Pancake',
-    'FD': 'First Down',
-    'MA': 'Missed Assignment',
-    'SC': 'Spectacular Catch',
-    'DP': 'Dropped Pass',
-    'H': 'Holding',
-    'BR': 'Bad Route',
-    'L': 'Loaf (Laziness)',
-    'NFS': 'Not Full Speed',
-    'W': 'Whiffed',
-    'BT': 'Broken Tackle',
-    'LF': 'Lack of Focus',
-    'BBL': 'Bad Body Language',
-    'EP': 'Extra Point Conversion',
-}
-
-# Per-code point values (aligns with film_grade.py)
-LEGEND_POINTS = {
-    'TD': 15,
-    'E': 5,
-    'ER': 7,
-    'GR': 2,
-    'GB': 2,
-    'P': 10,
-    'FD': 5,
-    'MA': -10,
-    'SC': 10,
-    'DP': -15,
-    'H': 0,
-    'BR': -2,
-    'L': -2,
-    'NFS': -3,
-    'W': -1,
-    'LF': -0.5,
-    'BBL': -0.5,
-    'EP': 2,
-}
+from rubric import CODE_LABELS, LEGEND_POINTS
 
 
 def parse_notes_to_rows(notes_text: str):
@@ -227,7 +187,21 @@ def text_report_to_pdf(txt_path: Path, pdf_path: Path, player_notes_index=None, 
         story.append(tbl)
         story.append(Spacer(1, 0.15*inch))
 
-    # DISCIPLINE section removed as redundant
+    # DISCIPLINE section (Drops / MAs / Loafs)
+    if disc_vals:
+        disc_order = ['Drops', 'Missed Assignments', 'Loafs']
+        disc_rows = [[k, str(disc_vals[k])] for k in disc_order if k in disc_vals]
+        if disc_rows:
+            story.append(Paragraph('DISCIPLINE', styles['Heading3']))
+            tbl = Table([['Metric', 'Count']] + disc_rows, hAlign='LEFT', colWidths=[2.4*inch, 3.6*inch])
+            tbl.setStyle(TableStyle([
+                ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
+                ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ]))
+            story.append(tbl)
+            story.append(Spacer(1, 0.15*inch))
 
     # KEY PLAYS detailed list (from 'codes' per play)
     if key_entries_index is not None and player_name and week_val:
