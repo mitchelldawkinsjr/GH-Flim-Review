@@ -27,7 +27,6 @@ import sys
 import pandas as pd
 import re
 from pathlib import Path
-import math
 
 from rubric import (
     LEGEND_POINTS,
@@ -41,6 +40,8 @@ from rubric import (
     effective_drops,
     effective_ma,
     effective_loafs,
+    positive_code_points,
+    keyplay_tier_bonus,
     fmt_count,
 )
 
@@ -128,9 +129,11 @@ def compute_row(r):
     # Excel-equivalent terms
     yards_term = 1.5 * min(safe_div(yards_per_target, 8.0), 1.0)
     tds_term = 12.0 * min(tds_per30, 1.0)
-    # sqrt of key plays per 30, capped at 1.33, scaled by 6
-    kp_sqrt_capped = min(math.sqrt(keyplays_per30) if keyplays_per30 > 0 else 0.0, 1.33)
-    keyplays_term = 6.0 * kp_sqrt_capped
+    # Key-play tier: positive discrete code points per 30 (effort + production),
+    # excluding yardage (rewarded via yards_term/catch_rate). Tiered so effort
+    # can recover points lost to a drop/MA but is capped short of an A.
+    pos_code_per30 = per30(positive_code_points(code_counts), snaps)
+    keyplays_term = keyplay_tier_bonus(pos_code_per30)
     targets_term = 4.0 * min(targets_per30, 1.0)
     synergy_term = 1.0 * min(catch_rate * safe_div(yards_per_target, 8.0), 1.0)
 
@@ -143,7 +146,7 @@ def compute_row(r):
         synergy_term
     )
     neg = (
-        12.0 * drops_rate +
+        15.0 * drops_rate +
         4.0  * loafs_per30 +
         9.0  * ma_per30
     )

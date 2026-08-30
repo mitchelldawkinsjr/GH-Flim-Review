@@ -248,3 +248,43 @@ def effective_loafs(sheet_loafs, counts: dict) -> float:
     except Exception:
         sheet = 0.0
     return max(sheet, float(counts.get('L', 0)))
+
+
+# Discrete point value for a broken tackle. BT+N is a count of broken tackles
+# (not yardage), so it earns this flat value in the grade's key-play tier.
+BT_POINTS = 2
+
+
+def positive_code_points(counts: dict) -> float:
+    """Sum of positive discrete code points used by the grade's key-play tier.
+
+    Yardage codes (C+N / R+N) are excluded -- yards are rewarded separately via
+    yards_term / catch_rate -- so only the play-type codes (TD, E, GB, FD, ...)
+    and broken tackles (at BT_POINTS each) drive the tier. This makes the legend
+    point values meaningful to the letter grade and lets effort lift a grade
+    that was dinged by a drop or missed assignment.
+    """
+    total = 0.0
+    for code, cnt in counts.items():
+        if code == 'BT':
+            total += BT_POINTS * cnt
+            continue
+        if code in LEGEND_POINTS and LEGEND_POINTS[code] > 0:
+            total += LEGEND_POINTS[code] * cnt
+    return total
+
+
+def keyplay_tier_bonus(pos_per30: float) -> float:
+    """Tiered grade bonus from positive key-play points per 30 snaps.
+
+    Effort and production lift the grade in steps so going the extra mile can
+    recover points lost to a drop or MA, but the cap keeps effort alone from
+    forcing an A. Thresholds: 1 -> +3, 5 -> +6, 10 -> +9 (cap).
+    """
+    if pos_per30 < 1:
+        return 0.0
+    if pos_per30 < 5:
+        return 3.0
+    if pos_per30 < 10:
+        return 6.0
+    return 9.0
