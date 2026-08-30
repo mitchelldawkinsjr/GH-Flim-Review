@@ -156,7 +156,7 @@ def parse_codes_to_points(codes_str, warn_unknown: bool = False):
     if not isinstance(codes_str, str) or not codes_str.strip():
         return total, counts, yards_c, yards_r, derived_keyplays
 
-    def account_token(t, seen):
+    def account_token(t):
         nonlocal total, yards_c, yards_r, derived_keyplays
         m_c = PATTERN_CATCH_YARDS.match(t)
         if m_c:
@@ -178,10 +178,6 @@ def parse_codes_to_points(codes_str, warn_unknown: bool = False):
             return
         t_up = t.upper()
         if t_up in LEGEND_POINTS:
-            key = ('code', t_up)
-            if key in seen:
-                return
-            seen.add(key)
             total += LEGEND_POINTS[t_up]
             counts[t_up] += 1
             if t_up in POSITIVE_CODES_FOR_KEYPLAYS:
@@ -189,8 +185,10 @@ def parse_codes_to_points(codes_str, warn_unknown: bool = False):
         elif warn_unknown and not t_up.isdigit():
             print(f"WARNING: unrecognized code token {t!r} in {codes_str!r}", file=sys.stderr)
 
-    seen = set()
-    # Parse play-numbered segments "143(E,P)" and dedupe codes per play.
+    # Per-play dedup: the same code on the same play counts once (e.g. when a
+    # play is listed in both the ++ and -- columns). Different plays with the
+    # same code each count.
+    seen_play = set()
     for m in re.finditer(r'(\d+)\s*\(([^)]*)\)', codes_str):
         play = m.group(1)
         for tok in re.split(r'[\s,;]+', m.group(2)):
@@ -198,16 +196,23 @@ def parse_codes_to_points(codes_str, warn_unknown: bool = False):
             if not tok:
                 continue
             key = (play, tok.upper())
-            if key in seen:
+            if key in seen_play:
                 continue
-            seen.add(key)
-            account_token(tok, seen)
-    # Parse any free-floating tokens outside parens (e.g. "ER C+12 FD").
+            seen_play.add(key)
+            account_token(tok)
+    # Free-floating tokens outside parens (e.g. "ER C+12 FD") have no play
+    # number, so dedupe by token to avoid double-counting a repeated entry.
+    seen_free = set()
     remainder = re.sub(r'\d+\s*\([^)]*\)', ' ', codes_str)
     for tok in re.split(r'[\s,;]+', remainder.replace('(', ' ').replace(')', ' ')):
         tok = tok.strip()
-        if tok:
-            account_token(tok, seen)
+        if not tok:
+            continue
+        key = tok.upper()
+        if key in seen_free:
+            continue
+        seen_free.add(key)
+        account_token(tok)
 
     return total, counts, yards_c, yards_r, derived_keyplays
 
