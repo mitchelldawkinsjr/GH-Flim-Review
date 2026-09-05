@@ -6,31 +6,30 @@ Primary path: **publish the tab to the web as CSV**, then let GitHub Actions pul
 
 Workbook: https://docs.google.com/spreadsheets/d/1ari_H6Dk_J1AfEWrpQV-VJ1rBZ-mBWF1jJbFkj5zBkQ
 
-Current published feed (gid `916210750`):
+The base published feed is stored in `published.json` (`csv_url`, **without** a `gid=`). The tab for each week is chosen **by position**: week N pulls the Nth tab (sheet) in the workbook. The per-tab `gid` is discovered automatically by reading the published HTML index (`pub?output=html`), which embeds every tab's `gid` in tab order — so there is **no API key, no extra sharing, and no per-week gid entry** required.
 
-https://docs.google.com/spreadsheets/d/e/2PACX-1vSJN_QZbNJCypAsHSmr2YLaspdsvhMF8kVYDLPhSZaDStCU7V3PVlRJyZDHXHqrtrhSRXPl9Jq_HKwf/pub?gid=916210750&single=true&output=csv
+That link is public anyone-with-the-URL.
 
-URL is stored in `published.json`. That link is public anyone-with-the-URL.
+**One-time setup**
 
-**Publish a week**
+Publish the workbook to web: **File → Share → Publish to web → Entire document → CSV**. Keep it published. (Each tab becomes fetchable by its gid; the document-level publish is what exposes the tab index the tool reads.)
 
-1. Finish the week tab (`Wk1 Holland`, etc.).
-2. **File → Share → Publish to web** — entire document as CSV (or that tab). Keep it published.
-3. Copy the tab **gid** from the Sheet URL (`gid=916210750`).
-4. GitHub → **Actions → Process week CSV → Run workflow**:
-   - source: `published_sheet`
-   - season / week / opponent
-   - `sheets_gid` if this is not the default tab
+**Run a week**
 
-The Action downloads the CSV into `csv/{season}/Wk{N}_{Opponent}.csv`, runs `run_week.py`, and deploys.
+GitHub → **Actions → Process week CSV → Run workflow**:
+- source: `published_sheet`
+- season / week / opponent
+
+The Action resolves the Nth tab's gid automatically and downloads it into `csv/{season}/Wk{N}_{Opponent}.csv`, runs `run_week.py`, and deploys. Make sure the week's tab is the Nth sheet in the workbook (drag tabs to reorder if needed) — non-week tabs (e.g. `Config`) count toward the position, so keep week tabs at the front in order.
 
 Local dry run:
 
 ```bash
 python3 tools/fetch_published_csv.py --season 2026-2027 --week 1 --opponent Holland
+python3 tools/fetch_published_csv.py --season 2026-2027 --week 2 --opponent Fruitport
 ```
 
-Optional `--gid 916210750` to target another published tab in the same workbook.
+Optional `--gid 1234567890` to override the resolved gid for one run.
 
 ## Apps Script push (optional)
 
