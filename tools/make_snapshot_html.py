@@ -70,7 +70,10 @@ def build_snapshot_html(rows: list[dict], ga_snippet: str = "") -> str:
         key_points_cell = f"{r['key_points']:.1f}" if isinstance(r['key_points'], float) else str(r['key_points'])
         grade_cell = str(int(round(float(r['score']))))
         total_loafs += float(r['loafs'])
-        scores.append(float(r['score']))
+        # Only players who actually took a snap count toward the unit grade,
+        # so a 0-snap player (who defaulted to a 73/C) can't drag the average.
+        if safe_int(r['snaps']) > 0:
+            scores.append(float(r['score']))
         # Accumulate totals
         totals['snaps'] += safe_int(r['snaps'])
         totals['drops'] += safe_int(r['drops'])
