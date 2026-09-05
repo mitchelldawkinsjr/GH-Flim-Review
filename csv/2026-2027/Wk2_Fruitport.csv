@@ -1,16 +1,16 @@
 Player,Snap count,Targets,Drops,Catches,Rec Yards,Rushes,Rush Yards,Touchdowns,Missed Assignment,Loaf,Key play ++,Key play --,Show in flim,Notes
 Aidan,33,1,,,,1,1,,,,"21(E),37(GB),60(P),69(R+1),105(E,P)",,63,"21(i like the nastiness in the blocking here EARLY in the game),60(huge block!),63(horrible no call only thing i can say is gith back to the ball as much as you can you did that we just didnt get the call),105(huge block GREAT effort)"
-Zay,32,6,,6,46,,,,,,"22(E),35(C+10,FD,GR),74(C+5,FD),104(C+10,FD),106(C+9,FD),109(C+9),111(C+3,TD,GR,SP)",,,"22(good effort getting hands on db), 35(nice work getting to the open spot and catchiong the football, after the first defender is beat just win with speed after that ottherwise nice play)"
+Zay,32,6,,6,46,,,1,,,"22(E),35(C+10,FD,GR),74(C+5,FD),104(C+10,FD),106(C+9,FD),109(C+9),111(C+3,TD,GR,SP)",,,"22(good effort getting hands on db), 35(nice work getting to the open spot and catchiong the football, after the first defender is beat just win with speed after that ottherwise nice play)"
 Martise,36,5,1,2,23,2,11,,,,"22(R+2),23(R+9),37(GB),39(C+14,BT+3),105(C+9)",70(DP),,70(worth a dispute i felt it hit both hands here)
 Jakari,36,4,,4,63,,,,,,"36(P),71(C+7,FD),71(C+27,FD),98(C+15,FD),99(C+14,FD,GR)",,,36(great block here!)
 Darrias,1,,,,,,,,,,,,,
-Josiah,4,,,,,,,,2,,,"21(W),37(W)",22,"21(break down get a good base short choppy steps and be under control to the point of contact then drive your feet, the whiff here is sue to reaching and not having a good base),37(Whiffed, the person you missed made the tackle)"
+Josiah,4,,,,,,,,,2,,"21(W),37(W)",22,"21(break down get a good base short choppy steps and be under control to the point of contact then drive your feet, the whiff here is sue to reaching and not having a good base),37(Whiffed, the person you missed made the tackle)"
 Alijah,3,,,,,,,,,,,,22,
 Chris,0,,,,,,,,,,,,,
 Tatt,0,, ,,,,,,,,,,,
 Jonquil,0,,,,,,,,,,,,,
 ,,,,,,Total Snaps,,,,Total Loafs,,,,
-,,,,,,37,,,,0,,,,
+,,,,,,37,,,,2,,,,
 ,Code,Name,Point Amount,,,,,,,,,Group Notes,Show in flim,
 ,(TD),Touchdown,15,,,,,,,,,,,
 ,(E),Relentless Effort,5,,,,,,,,,,,
