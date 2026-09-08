@@ -90,7 +90,9 @@ Drop a film log at `csv/{season}/Wk{N}_{Opponent}.csv`. GitHub Action **Process 
 
 Manual re-run from a file already in git: same workflow, source `git`, csv_path e.g. `csv/2026-2027/Wk1_Holland.csv`.
 
-**Fixing one player's data without reprocessing everyone:** **Actions → Regen player week → Run workflow** with season, week, opponent, and player name (must match the name in that week's CSV). Runs `tools/run_week.py --player`, which only rewrites that player's report/PDF (aggregate pages like the dashboard index and season rollups are still refreshed since they summarize everyone).
+**Fixing one player's data (or the group film doc) without reprocessing everyone:** **Actions → Regen week asset → Run workflow** with season, week, opponent, and `target`:
+- `target: player` (default) + player name (must match the name in that week's CSV) — runs `tools/run_week.py --player`, which only rewrites that player's report/PDF (aggregate pages like the dashboard index and season rollups are still refreshed since they summarize everyone).
+- `target: group` — runs `tools/run_week.py --group_only`, which only rebuilds `pdfs/group_film_study.pdf` straight from the raw CSV and touches nothing else.
 
 Local fallback:
 

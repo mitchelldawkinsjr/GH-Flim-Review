@@ -104,12 +104,16 @@ def main():
     ap.add_argument('--out_dir', help='Output directory (default: out/{season}/Wk<week>)')
     ap.add_argument('--python', dest='python_bin', help='Python binary to use (default: ./venv/bin/python or current)')
     ap.add_argument('--player', help='If set, only regenerate this player\'s individual report and PDF; aggregate outputs (summary, dashboards, snapshot, etc.) are still refreshed for the whole week')
+    ap.add_argument('--group_only', action='store_true', help='Only regenerate the group film study PDF from the raw CSV (skips grading, per-player reports/PDFs, and dashboards)')
     args = ap.parse_args()
 
     week = int(args.week)
     opp = str(args.opponent)
     season = str(args.season)
     player = args.player
+
+    if player and args.group_only:
+        raise SystemExit('--player and --group_only are mutually exclusive.')
 
     project_root = Path(__file__).resolve().parents[1]
     csv_path = find_csv(
@@ -123,6 +127,18 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     python_bin = pick_python_bin(args.python_bin, project_root=project_root)
+
+    if args.group_only:
+        group_pdf = out_dir / 'pdfs' / 'group_film_study.pdf'
+        subprocess.run([
+            python_bin, str(project_root / 'tools' / 'make_group_film_pdf.py'),
+            '--csv', str(csv_path),
+            '--out', str(group_pdf),
+            '--week', str(week),
+            '--opponent', opp,
+        ], check=True)
+        print(f"\nDone. Group Film PDF: {group_pdf}")
+        return
 
     prepared_csv = out_dir / f"Wk{week}_{opp}_prepared.csv"
     results_csv_name = f"results_Wk{week}_{opp}.csv"

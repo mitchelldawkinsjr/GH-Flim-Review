@@ -1,4 +1,4 @@
-name: Regen player week
+name: Regen week asset
 
 on:
   workflow_dispatch:
@@ -13,8 +13,15 @@ on:
       opponent:
         description: "Opponent short name, e.g. Holland"
         type: string
+      target:
+        description: "What to regenerate"
+        type: choice
+        options:
+          - player
+          - group
+        default: player
       player:
-        description: "Player name to regenerate (must match a name in the week's CSV)"
+        description: "Player name to regenerate (required when target=player; must match a name in the week's CSV)"
         type: string
 
 concurrency:
@@ -27,7 +34,7 @@ permissions:
 
 jobs:
   regen:
-    name: Regenerate one player's week
+    name: Regenerate a week asset
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -48,21 +55,33 @@ jobs:
       - name: Validate inputs
         run: |
           set -euo pipefail
-          if [ -z "${{ inputs.week }}" ] || [ -z "${{ inputs.opponent }}" ] || [ -z "${{ inputs.player }}" ]; then
-            echo "week, opponent, and player are all required."
+          if [ -z "${{ inputs.week }}" ] || [ -z "${{ inputs.opponent }}" ]; then
+            echo "week and opponent are required."
+            exit 1
+          fi
+          if [ "${{ inputs.target }}" = "player" ] && [ -z "${{ inputs.player }}" ]; then
+            echo "player is required when target=player."
             exit 1
           fi
 
-      - name: Regenerate player's week
+      - name: Regenerate
         env:
           GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
         run: |
           set -euo pipefail
-          python tools/run_week.py \
-            --week "${{ inputs.week }}" \
-            --opponent "${{ inputs.opponent }}" \
-            --season "${{ inputs.season }}" \
-            --player "${{ inputs.player }}"
+          if [ "${{ inputs.target }}" = "group" ]; then
+            python tools/run_week.py \
+              --week "${{ inputs.week }}" \
+              --opponent "${{ inputs.opponent }}" \
+              --season "${{ inputs.season }}" \
+              --group_only
+          else
+            python tools/run_week.py \
+              --week "${{ inputs.week }}" \
+              --opponent "${{ inputs.opponent }}" \
+              --season "${{ inputs.season }}" \
+              --player "${{ inputs.player }}"
+          fi
 
       - name: Commit generated pages
         id: commit
@@ -76,7 +95,11 @@ jobs:
             echo "committed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "Regenerate ${{ inputs.player }} — Week ${{ inputs.week }}"
+          if [ "${{ inputs.target }}" = "group" ]; then
+            git commit -m "Regenerate group film study — Week ${{ inputs.week }}"
+          else
+            git commit -m "Regenerate ${{ inputs.player }} — Week ${{ inputs.week }}"
+          fi
           git push
           echo "committed=true" >> "$GITHUB_OUTPUT"
 
