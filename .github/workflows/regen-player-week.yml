@@ -1,0 +1,91 @@
+name: Regen player week
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Season folder, e.g. 2025-2026"
+        type: string
+        default: "2025-2026"
+      week:
+        description: "Week number"
+        type: string
+      opponent:
+        description: "Opponent short name, e.g. Holland"
+        type: string
+      player:
+        description: "Player name to regenerate (must match a name in the week's CSV)"
+        type: string
+
+concurrency:
+  group: process-week
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  regen:
+    name: Regenerate one player's week
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install pipeline dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas reportlab
+
+      - name: Validate inputs
+        run: |
+          set -euo pipefail
+          if [ -z "${{ inputs.week }}" ] || [ -z "${{ inputs.opponent }}" ] || [ -z "${{ inputs.player }}" ]; then
+            echo "week, opponent, and player are all required."
+            exit 1
+          fi
+
+      - name: Regenerate player's week
+        env:
+          GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
+        run: |
+          set -euo pipefail
+          python tools/run_week.py \
+            --week "${{ inputs.week }}" \
+            --opponent "${{ inputs.opponent }}" \
+            --season "${{ inputs.season }}" \
+            --player "${{ inputs.player }}"
+
+      - name: Commit generated pages
+        id: commit
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add out/
+          if git diff --staged --quiet; then
+            echo "No generated-page changes to commit."
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -m "Regenerate ${{ inputs.player }} — Week ${{ inputs.week }}"
+          git push
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger site deploys
+        if: steps.commit.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh workflow run deploy.yml --ref "$GITHUB_REF_NAME"
+          gh workflow run deploy-vps.yml --ref "$GITHUB_REF_NAME"
+          echo "Dispatched Deploy Pages and Deploy to VPS."

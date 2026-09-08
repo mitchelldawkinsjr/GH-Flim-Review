@@ -474,6 +474,7 @@ def main():
     ap.add_argument('--summary_csv', required=True)
     ap.add_argument('--details_csv', help='Detailed results CSV (for notes)')
     ap.add_argument('--title', default='Week Summary')
+    ap.add_argument('--player', help='If set, only render the per-player PDF for this player (the group summary PDF is still rebuilt)')
     args = ap.parse_args()
 
     reports_dir = Path(args.reports_dir)
@@ -569,6 +570,10 @@ def main():
 
     # Per-player PDFs
     for txt in reports_dir.glob('*.txt'):
+        if args.player:
+            name_part, _, _week_part = txt.stem.rpartition('_')
+            if name_part.replace('_', ' ').strip().lower() != args.player.strip().lower():
+                continue
         pdf = out_dir / (txt.stem + '.pdf')
         text_report_to_pdf(txt, pdf, player_notes_index=player_notes_index, ma_plays_index=ma_plays_index, loaf_plays_index=loaf_plays_index, key_entries_index=key_entries_index)
 

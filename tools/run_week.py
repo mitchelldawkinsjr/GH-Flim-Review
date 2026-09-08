@@ -103,11 +103,13 @@ def main():
     ap.add_argument('--csv', help='Override input CSV path')
     ap.add_argument('--out_dir', help='Output directory (default: out/{season}/Wk<week>)')
     ap.add_argument('--python', dest='python_bin', help='Python binary to use (default: ./venv/bin/python or current)')
+    ap.add_argument('--player', help='If set, only regenerate this player\'s individual report and PDF; aggregate outputs (summary, dashboards, snapshot, etc.) are still refreshed for the whole week')
     args = ap.parse_args()
 
     week = int(args.week)
     opp = str(args.opponent)
     season = str(args.season)
+    player = args.player
 
     project_root = Path(__file__).resolve().parents[1]
     csv_path = find_csv(
@@ -134,20 +136,36 @@ def main():
     ], check=True)
 
     # Step 2: grade
-    subprocess.run([
+    grade_cmd = [
         python_bin, str(project_root / 'film_grade.py'),
         str(prepared_csv), '--out_dir', str(out_dir), '--out', results_csv_name
-    ], check=True)
+    ]
+    if player:
+        grade_cmd += ['--player', player]
+    subprocess.run(grade_cmd, check=True)
+
+    if player:
+        report_path = out_dir / 'reports' / f"{player.strip().replace(' ', '_')}_{week}.txt"
+        if not report_path.exists():
+            import pandas as pd
+            known = sorted(pd.read_csv(results_csv)['player'].astype(str).str.strip().unique())
+            raise SystemExit(
+                f"No report generated for player '{player}' in Week {week}. "
+                f"Players found in this week's CSV: {', '.join(known)}"
+            )
 
     # Step 3: PDFs
-    subprocess.run([
+    pdfs_cmd = [
         python_bin, str(project_root / 'tools' / 'make_pdfs.py'),
         '--reports_dir', str(out_dir / 'reports'),
         '--out_dir', str(out_dir / 'pdfs'),
         '--summary_csv', str(summary_csv),
         '--details_csv', str(results_csv),
         '--title', f"Week {week} Summary"
-    ], check=True)
+    ]
+    if player:
+        pdfs_cmd += ['--player', player]
+    subprocess.run(pdfs_cmd, check=True)
 
     # Step 4: Group film study PDF from raw CSV
     group_pdf = out_dir / 'pdfs' / 'group_film_study.pdf'

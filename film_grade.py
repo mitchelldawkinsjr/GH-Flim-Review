@@ -183,11 +183,13 @@ def compute_row(r):
         **flat_counts
     }
 
-def make_reports(out_df, reports_dir='reports', by_player='player', by_week='week'):
+def make_reports(out_df, reports_dir='reports', by_player='player', by_week='week', only_player=None):
     p = Path(reports_dir)
     p.mkdir(parents=True, exist_ok=True)
 
     for (player, week), g in out_df.groupby([by_player, by_week]):
+        if only_player and str(player).strip().lower() != str(only_player).strip().lower():
+            continue
         snaps = int(g['snaps'].sum())
         targets = int(g['targets'].sum())
         catches = int(g['catches'].sum())
@@ -275,6 +277,7 @@ def main():
     ap.add_argument('--out', default='results.csv', help='Output CSV filename or path (default: results.csv)')
     ap.add_argument('--out_dir', default='out', help='Directory where all outputs are written (default: out)')
     ap.add_argument('--by', default='player', help='Column to aggregate by for summary (default: player)')
+    ap.add_argument('--player', help='If set, only (re)write the player-facing report for this player; results/summary CSVs still cover every player')
     args = ap.parse_args()
 
     # Read raw to inspect original column names for key play ++/-- (handle BOM)
@@ -356,7 +359,7 @@ def main():
     summary.to_csv(summary_out, index=False)
 
     # Emit player-facing reports into out_dir/reports
-    make_reports(out, reports_dir=str(out_dir / 'reports'))
+    make_reports(out, reports_dir=str(out_dir / 'reports'), only_player=args.player)
 
     print(f"Wrote detailed results to {out_path}")
     print(f"Wrote summary by {by} to {summary_out}")
