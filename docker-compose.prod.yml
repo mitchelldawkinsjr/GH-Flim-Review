@@ -32,6 +32,10 @@ services:
       dockerfile: deploy/pocketbase.Dockerfile
     container_name: flim-review-pocketbase
     restart: unless-stopped
+    # Loopback-only host port so the on-VPS bootstrap script can reach the API.
+    # Public access is via the app container's /api/ proxy (internal Docker network).
+    ports:
+      - "127.0.0.1:8090:8090"
     volumes:
       - pb_data:/pb_data
       - pb_public:/pb_public
