@@ -27,10 +27,11 @@ services:
   # Shared realtime store for the Film Room Tagger (one session across all devices).
   # Internal only — the app container proxies /api/ → pocketbase:8090.
   pocketbase:
-    image: pocketbase/pocketbase:latest
+    build:
+      context: .
+      dockerfile: deploy/pocketbase.Dockerfile
     container_name: flim-review-pocketbase
     restart: unless-stopped
-    command: serve --http=0.0.0.0:8090 --dir=/pb_data --publicDir=/pb_public
     volumes:
       - pb_data:/pb_data
       - pb_public:/pb_public

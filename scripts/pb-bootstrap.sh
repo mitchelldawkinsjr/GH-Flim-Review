@@ -18,13 +18,9 @@ for i in $(seq 1 30); do
   if [ "$i" -eq 30 ]; then echo "PocketBase did not become healthy."; exit 1; fi
 done
 
-# 1) Ensure a superuser exists (idempotent). `superuser create` fails if it already exists.
-if ! docker exec "$PB_CONTAINER" pocketbase superuser list 2>/dev/null | grep -q "$SUPERUSER_EMAIL"; then
-  echo "Creating superuser $SUPERUSER_EMAIL"
-  docker exec "$PB_CONTAINER" pocketbase superuser create "$SUPERUSER_EMAIL" "$SUPERUSER_PASSWORD" || true
-else
-  echo "Superuser already exists."
-fi
+# 1) Ensure the superuser exists and its password matches the persisted one (idempotent).
+echo "Upserting superuser $SUPERUSER_EMAIL"
+docker exec "$PB_CONTAINER" /pb/pocketbase --dir=/pb_data superuser upsert "$SUPERUSER_EMAIL" "$SUPERUSER_PASSWORD"
 
 # 2) Authenticate as superuser.
 TOKEN=$(curl -fsS -X POST "$PB_URL/api/collections/_superusers/auth-with-password" \
