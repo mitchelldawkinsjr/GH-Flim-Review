@@ -175,5 +175,5 @@ jobs:
             fi
             export PB_SUPERUSER_PASSWORD="$(cat "$PB_PW_FILE")"
             export PB_SUPERUSER_EMAIL="${PB_SUPERUSER_EMAIL:-tagreel@flim.local}"
-            bash scripts/pb-bootstrap.sh
+            sh scripts/pb-bootstrap.sh
           EOF
