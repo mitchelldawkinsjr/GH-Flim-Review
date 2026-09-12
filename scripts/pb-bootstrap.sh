@@ -32,7 +32,9 @@ if [ -z "$TOKEN" ]; then echo "Failed to authenticate as superuser."; exit 1; fi
 AUTH="Authorization: Bearer $TOKEN"
 
 # 3) Ensure the tagreel collection exists with public read/write rules + name/data fields.
-if curl -fsS "$PB_URL/api/collections?perPage=500" -H "$AUTH" | grep -q "\"name\":\"$COLLECTION\""; then
+COLLS=$(curl -fsS "$PB_URL/api/collections?perPage=500" -H "$AUTH")
+echo "Existing collections: $(echo "$COLLS" | sed -n 's/.*"name":"\([^"]*\)".*/\1/p' | tr '\n' ' ')"
+if echo "$COLLS" | grep -q "\"name\":\"$COLLECTION\""; then
   echo "Collection '$COLLECTION' already exists."
 else
   echo "Creating collection '$COLLECTION'..."
@@ -52,8 +54,7 @@ else
 }
 JSON
 )
-  curl -fsS -X POST "$PB_URL/api/collections" -H "$AUTH" -H "Content-Type: application/json" \
-    -d "$SCHEMA" >/dev/null
+  echo "Create response: $(curl -s -X POST "$PB_URL/api/collections" -H "$AUTH" -H "Content-Type: application/json" -d "$SCHEMA")"
   echo "Collection created."
 fi
 
