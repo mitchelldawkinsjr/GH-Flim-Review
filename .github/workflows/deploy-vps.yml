@@ -8,6 +8,7 @@ on:
       - "tools/**"
       - "film_grade.py"
       - "deploy/**"
+      - "scripts/**"
       - "Dockerfile"
       - "docker-compose.prod.yml"
       - ".github/workflows/deploy-vps.yml"
@@ -163,4 +164,16 @@ jobs:
             fi
 
             echo "Deployment successful!"
+
+            # --- Film Room Tagger: bootstrap the shared PocketBase store ---
+            # Auto-generate + persist a superuser password on first run; reuse thereafter.
+            PB_PW_FILE=".pb-superuser"
+            if [ ! -s "$PB_PW_FILE" ]; then
+              LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 > "$PB_PW_FILE"
+              chmod 600 "$PB_PW_FILE"
+              echo "Generated new PocketBase superuser password."
+            fi
+            export PB_SUPERUSER_PASSWORD="$(cat "$PB_PW_FILE")"
+            export PB_SUPERUSER_EMAIL="${PB_SUPERUSER_EMAIL:-tagreel@flim.local}"
+            bash scripts/pb-bootstrap.sh
           EOF

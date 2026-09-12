@@ -401,6 +401,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.0/dist/pocketbase.umd.js"></script>
 <script>
 (function(){
   "use strict";
@@ -537,12 +538,74 @@
   function saveLocal(k,v){ try{ localStorage.setItem(localKey(k), JSON.stringify(v)); }catch(e){} }
   function loadLocal(k,fallback){ try{ var v=localStorage.getItem(localKey(k)); return v? JSON.parse(v): fallback; }catch(e){ return fallback; } }
 
+  // ---------------- shared store: PocketBase adapter ----------------
+  // Implements the same doc().get/set/update/onSnapshot surface the rest of
+  // the app already uses, backed by a single PocketBase collection "tagreel"
+  // with fields: name (unique key) + data (json). Falls back to localStorage
+  // if PocketBase is unreachable or the SDK didn't load.
+  function pbAdapter(pb, collection){
+    function snapFrom(rec){ return { exists:true, data:function(){ return rec.data; } }; }
+    function emptySnap(){ return { exists:false, data:function(){ return undefined; } }; }
+    function escFilter(v){ return String(v).replace(/'/g, "\\'"); }
+    async function find(name){
+      var rec = await pb.collection(collection).getFirstListItem("name='"+escFilter(name)+"'");
+      return rec;
+    }
+    function ref(name){
+      return {
+        get: function(){
+          return find(name).then(snapFrom).catch(function(e){
+            if(e && e.status===404) return emptySnap(); throw e;
+          });
+        },
+        set: function(data){
+          return find(name).then(function(rec){
+            return pb.collection(collection).update(rec.id, { data:data });
+          }).catch(function(e){
+            if(e && e.status===404) return pb.collection(collection).create({ name:name, data:data });
+            throw e;
+          });
+        },
+        update: function(partial){
+          return find(name).then(function(rec){
+            var merged = Object.assign({}, rec.data || {}, partial);
+            return pb.collection(collection).update(rec.id, { data:merged });
+          }).catch(function(e){
+            if(e && e.status===404) return pb.collection(collection).create({ name:name, data:partial });
+            throw e;
+          });
+        },
+        onSnapshot: function(cb, errCb){
+          var stopped=false;
+          ref(name).get().then(function(s){ if(!stopped) cb(s); }).catch(function(){ if(errCb) errCb(); });
+          pb.collection(collection).subscribe('*', function(e){
+            if(stopped) return;
+            var rec = e && e.record;
+            if(rec && rec.name===name){ cb(snapFrom(rec)); }
+          }).catch(function(){ if(errCb) errCb(); });
+          return function(){ stopped=true; };
+        }
+      };
+    }
+    return { doc: ref };
+  }
+  async function tryPocketbase(){
+    if(!window.Pocketbase) return null;
+    var base = location.pathname.replace(/film-tagger\.html.*$/, '').replace(/\/$/, '') || '/';
+    try{
+      var pb = new window.Pocketbase(base);
+      var health = await pb.health.check();
+      if(!health) return null;
+      return pbAdapter(pb, 'tagreel');
+    }catch(e){ return null; }
+  }
+
   // ---------------- db bootstrap ----------------
   async function boot(){
     var statusText = document.getElementById('statusText');
     var statusPill = document.getElementById('statusPill');
     try{
-      state.db = (window.claude && window.claude.use) ? await window.claude.use('db') : null;
+      state.db = await tryPocketbase();
     }catch(e){ state.db = null; }
     try{
       state.downloads = (window.claude && window.claude.use) ? await window.claude.use('downloads') : null;

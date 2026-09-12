@@ -21,6 +21,28 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    depends_on:
+      - pocketbase
+
+  # Shared realtime store for the Film Room Tagger (one session across all devices).
+  # Internal only — the app container proxies /api/ → pocketbase:8090.
+  pocketbase:
+    image: pocketbase/pocketbase:latest
+    container_name: flim-review-pocketbase
+    restart: unless-stopped
+    command: serve --http=0.0.0.0:8090 --dir=/pb_data --publicDir=/pb_public
+    volumes:
+      - pb_data:/pb_data
+      - pb_public:/pb_public
+    networks:
+      - proxy
+    labels:
+      - "com.360ws.app=flim-review"
+      - "com.360ws.type=docker-app"
+
+volumes:
+  pb_data:
+  pb_public:
 
 networks:
   proxy:
