@@ -58,6 +58,10 @@ JSON
   echo "Collection created."
 fi
 
+# Diagnostics: definitively check the tagreel collection + records via loopback.
+echo "tagreel collection lookup: $(curl -s "$PB_URL/api/collections/tagreel" -H "$AUTH" | head -c 300)"
+echo "tagreel records (loopback): $(curl -s "$PB_URL/api/collections/tagreel/records" | head -c 300)"
+
 # 4) Seed the three logical documents if missing.
 seed_if_missing() {
   NAME="$1"; DATA="$2"
