@@ -91,6 +91,8 @@ def build_coach_review(player: str, totals: dict, rates: dict, code_counts: dict
     catches = int(totals.get('catches', 0))
     targets = int(totals.get('targets', 0))
     rec_yards = int(totals.get('rec_yards', 0))
+    rushes = int(totals.get('rushes', 0))
+    rush_yards = int(totals.get('rush_yards', 0))
     tds = int(totals.get('touchdowns', 0))
     drops = int(totals.get('drops', 0))
     ma = int(totals.get('ma', 0))
@@ -138,10 +140,18 @@ def build_coach_review(player: str, totals: dict, rates: dict, code_counts: dict
     goals.append("0 drops" if drops > 0 else "maintain 0 drops")
     goals.append("stack effort plays and first downs")
 
+    # Run-only game: all "targets" were carries, so frame the summary around
+    # rushing production instead of a misleading "0 catches on N targets" line.
+    run_only = (catches + drops == 0) and (rushes > 0)
+    if run_only:
+        summary_line = (f"{letter} ({score:.1f}). {rushes} carri{'es' if rushes!=1 else 'y'} for {rush_yards} yards and {tds} TD{'s' if tds!=1 else ''}. {catches} catches, {drops} drops, {ma} MA, {loafs} loafs.")
+    else:
+        summary_line = (f"{letter} ({score:.1f}). {catches} catches on {targets} targets for {rec_yards} yards and {tds} TD{'s' if tds!=1 else ''}. {drops} drops, {ma} MA, {loafs} loafs.")
+
     return (
         "<h2>Coach Review</h2>"
         "<table><tr><th>Review</th></tr><tr><td>"
-        f"<ul><li><strong>Summary</strong>: {letter} ({score:.1f}). {catches} catches on {targets} targets for {rec_yards} yards and {tds} TD{'s' if tds!=1 else ''}. {drops} drops, {ma} MA, {loafs} loafs.</li>"
+        f"<ul><li><strong>Summary</strong>: {summary_line}</li>"
         f"<li><strong>What stood out</strong>: {html.escape(stood_out)}</li>"
         f"<li><strong>Efficiency</strong>: {catch_rate_pct} catch rate and {ypt} yards per target.</li>"
         f"<li><strong>Improve</strong>: {' '.join(html.escape(s) for s in improve_parts)}</li>"
@@ -431,8 +441,14 @@ def render_week(details_csv: str, out_dir: str, title: str, pdfs_dir: str | None
         rec_yards = sum_int('rec_yards'); rush_yards = sum_int('rush_yards'); rushes = sum_int('rushes'); touchdowns = sum_int('touchdowns')
         drops = sum_int('drops'); ma = sum_int('missed_assignments'); loafs = sum_float('loafs')
         code_points = sum_float('code_points')
-        # Catch rate: catches / (catches + drops)
-        catch_rate = safe_div(catches, (catches + drops))
+        # Catch rate: catches / (catches + drops).
+        # Run-only game (no catchable pass balls, ball came via the run): treat
+        # rush targets as fulfilled so the displayed rate matches the grade
+        # (see film_grade.py compute_row for the canonical logic).
+        if catches + drops == 0 and rushes > 0:
+            catch_rate = (min(rushes, targets) / targets) if targets > 0 else 1.0
+        else:
+            catch_rate = safe_div(catches, (catches + drops))
         ypt = safe_div((rec_yards + rush_yards), targets)
         tds_per30 = per30(touchdowns, snaps)
         keyplays_total = sum_int('derived_keyplays')

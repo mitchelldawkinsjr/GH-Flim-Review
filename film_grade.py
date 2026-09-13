@@ -113,8 +113,16 @@ def compute_row(r):
     keyplays = keyplays_in if (isinstance(keyplays_in, (int, float)) and keyplays_in and keyplays_in > 0) else derived_kp
 
     # Core rates
-    # Catch rate on catchable balls only: catches / (catches + drops)
-    catch_rate = safe_div(catches, (catches + drops))
+    # Catch rate on catchable balls only: catches / (catches + drops).
+    # When a player had ZERO catchable pass balls (catches + drops == 0) but the
+    # ball came to him via the run game, treat those rush targets as fulfilled
+    # targets so a run-only game isn't penalized as a 0% catch rate. Rushes
+    # recorded in the Rushes column count as successful conversions of those
+    # targets (a carry that came his way IS a target he secured).
+    if catches + drops == 0 and rushes > 0:
+        catch_rate = (min(rushes, targets) / targets) if targets > 0 else 1.0
+    else:
+        catch_rate = safe_div(catches, (catches + drops))
     yards_per_target = safe_div((rec_yards + rush_yards), targets)
     tds_per30 = per30(touchdowns, snaps)
     keyplays_per30 = per30(keyplays, snaps)

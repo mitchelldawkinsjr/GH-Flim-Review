@@ -20,12 +20,18 @@ def generate_weekly_summary(player: str, week: int, opponent: str, totals: Dict,
     catches = totals.get('catches', 0)
     rec_yards = totals.get('rec_yards', 0)
     rush_yards = totals.get('rush_yards', 0)
+    rushes = totals.get('rushes', 0)
     touchdowns = totals.get('touchdowns', 0)
     drops = totals.get('drops', 0)
     ma = totals.get('ma', 0)
     loafs = totals.get('loafs', 0)
     score = rates.get('score', 0)
     grade = rates.get('grade', 'F')
+    
+    # A run-only game (no catchable pass balls, but the ball came via the run)
+    # should not be framed as a catching-reliability problem.
+    pass_targets = max(0, targets - rushes)
+    run_only = (catches + drops == 0) and (rushes > 0)
     
     # Calculate derived metrics
     total_yards = rec_yards + rush_yards
@@ -68,7 +74,9 @@ def generate_weekly_summary(player: str, week: int, opponent: str, totals: Dict,
     summary_parts.append(f"{player} had a {performance_desc} performance against {opponent} with a {grade} grade ({score:.1f}).")
     
     # Statistical highlights - adjusted for Division 4 West Michigan HS football
-    if catches > 0:
+    if rush_yards > 0 and catches == 0:
+        summary_parts.append(f"Did all his damage on the ground with {rushes} carri{'es' if rushes > 1 else 'y'} for {rush_yards} yards.")
+    elif catches > 0:
         if ypc >= 12:
             summary_parts.append(f"His {ypc:.1f} yards per catch shows good playmaking ability for this level.")
         elif ypc >= 8:
@@ -76,7 +84,12 @@ def generate_weekly_summary(player: str, week: int, opponent: str, totals: Dict,
         else:
             summary_parts.append(f"His {ypc:.1f} yards per catch shows short-area/possession work.")
     
-    if targets > 0:
+    if run_only:
+        # No catchable pass balls this week -- frame usage via carries, not
+        # a 0/N catch rate that reads like a dropped-passes problem.
+        if rushes > 0:
+            summary_parts.append(f"Was used as a runner with {rushes} carrie{'s' if rushes > 1 else 'y'} for {rush_yards} yards; no catchable pass targets came his way.")
+    elif targets > 0:
         if catch_rate >= 0.75:
             summary_parts.append(f"Good reliability with {catches}/{targets} catches ({catch_rate:.1%} catch rate).")
         elif catch_rate >= 0.5:
@@ -129,7 +142,7 @@ def generate_weekly_summary(player: str, week: int, opponent: str, totals: Dict,
     
     # Coaching recommendations
     recommendations = []
-    if catch_rate < 0.6 and targets > 2:
+    if catch_rate < 0.6 and targets > 2 and not run_only:
         recommendations.append("Focus on route precision and timing")
     if drops > catches * 0.2:
         recommendations.append("Work on concentration and hand-eye coordination")
