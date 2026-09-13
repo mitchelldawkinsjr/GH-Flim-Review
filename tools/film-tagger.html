@@ -593,10 +593,10 @@
     return { doc: ref };
   }
   async function tryPocketbase(){
-    if(!window.Pocketbase) return null;
+    if(!window.PocketBase) return null;
     var base = (location.pathname.replace(/film-tagger\.html.*$/, '').replace(/\/$/, '') || '') + '/pb';
     try{
-      var pb = new window.Pocketbase(base);
+      var pb = new window.PocketBase(base);
       var health = await pb.health.check();
       if(!health) return null;
       return pbAdapter(pb, 'tagreel');
