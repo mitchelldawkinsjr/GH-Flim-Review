@@ -871,6 +871,15 @@
     // no code, no note, no flags is fine — that's "on the field for this snap, nothing notable happened"
     var snapOnly = !codes.length && !note && !state.ui.flagNeg && !state.ui.flagFilm && !state.ui.flagTarget;
     var play = parseInt(playNoInput.value,10) || 0;
+    // A player can only be added to a play record once per play number — block duplicates.
+    var dup = state.entries.find(function(e){
+      return e.play === play && e.player === state.ui.player && e.id !== state.ui.editingId;
+    });
+    if(dup){
+      toast(state.ui.player + ' is already on play ' + play + ' — edit that tag instead of adding another');
+      editEntry(dup.id);
+      return;
+    }
     var entry = {
       id: state.ui.editingId || uid(),
       play: play, player: state.ui.player, codes: codes, note: note,
