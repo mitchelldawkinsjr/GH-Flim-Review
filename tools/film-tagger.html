@@ -930,17 +930,70 @@
   function codeString(codes){
     return codes.map(function(c){ return c.yards!=null && c.yards!=='' ? c.key+'+'+c.yards : c.key; }).join(',');
   }
-  function fullLogString(playerEntries){
-    return playerEntries.slice().sort(function(a,b){return a.play-b.play;})
-      .map(function(e){ return e.play+'('+codeString(e.codes)+')'; })
-      .filter(function(s){ return !s.endsWith('()'); })
+  function isNegativeCode(code) {
+    var meta = state.codes.find(function(c) {
+      return c.key === code.key;
+    });
+  
+    return meta && Number(meta.points) < 0;
+  }
+  
+  function codesForEntry(entry, wantNegative) {
+    return entry.codes.filter(function(code) {
+      return isNegativeCode(code) === wantNegative;
+    });
+  }
+  
+  function formatEntryWithCodes(entry, codes) {
+    if (!codes.length) return '';
+  
+    return entry.play + '(' + codeString(codes) + ')';
+  }
+  
+  function fullLogString(playerEntries) {
+    return playerEntries
+      .slice()
+      .sort(function(a, b) {
+        return a.play - b.play;
+      })
+      .map(function(entry) {
+        var positiveCodes = codesForEntry(entry, false);
+  
+        // If the entry has no codes, keep it in Key play ++
+        if (!entry.codes.length && !entry.negative) {
+          return entry.play + '()';
+        }
+  
+        return formatEntryWithCodes(entry, positiveCodes);
+      })
+      .filter(function(value) {
+        return value !== '';
+      })
       .join(',');
   }
-  function flaggedLogString(playerEntries){
-    return playerEntries.filter(function(e){return e.negative;}).slice().sort(function(a,b){return a.play-b.play;})
-      .map(function(e){ return e.play+'('+codeString(e.codes)+')'; })
+  
+  function flaggedLogString(playerEntries) {
+    return playerEntries
+      .slice()
+      .sort(function(a, b) {
+        return a.play - b.play;
+      })
+      .map(function(entry) {
+        var negativeCodes = codesForEntry(entry, true);
+  
+        // Preserve manually flagged negative plays with no negative code
+        if (entry.negative && !entry.codes.length) {
+          return entry.play + '()';
+        }
+  
+        return formatEntryWithCodes(entry, negativeCodes);
+      })
+      .filter(function(value) {
+        return value !== '';
+      })
       .join(',');
   }
+  
   function showFilmString(playerEntries){
     return playerEntries.filter(function(e){return e.showFilm;}).map(function(e){return e.play;})
       .sort(function(a,b){return a-b;}).join(',');
