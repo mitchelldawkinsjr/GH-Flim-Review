@@ -1,0 +1,1224 @@
+<meta charset="utf-8">
+<title>Film Room Tagger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#eef1ec; --surface:#ffffff; --surface-2:#e3e8e1; --surface-3:#d7ddd2;
+    --line:#c9d1c6; --text:#16201b; --text-dim:#55645c;
+    --accent:#b8690f; --accent-ink:#ffffff; --accent-soft:#f3e3d1;
+    --good:#2f8f5b; --good-bg:#e3f3ea; --good-line:#bfe0cd;
+    --bad:#c93f42; --bad-bg:#fbe8e8; --bad-line:#f0c3c4;
+    --info:#2f6fb0; --info-bg:#e7f0fa; --info-line:#c3d9ef;
+    --neutral-bg:#eef0ea; --neutral-line:#d3d9cd;
+    --shadow:0 1px 2px rgba(20,30,25,.08), 0 6px 16px rgba(20,30,25,.07);
+    --radius:10px;
+    --font-display:'Barlow Condensed',sans-serif;
+    --font-body:'Barlow',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#121612; --surface:#1b211c; --surface-2:#242b24; --surface-3:#2e362d;
+      --line:#333d33; --text:#eef2ee; --text-dim:#9baa9e;
+      --accent:#f2a736; --accent-ink:#1a1204; --accent-soft:#3a2c11;
+      --good:#4fbf85; --good-bg:#16301f; --good-line:#245334;
+      --bad:#f0696c; --bad-bg:#3a1b1c; --bad-line:#5c2a2b;
+      --info:#6db2ef; --info-bg:#132537; --info-line:#20405c;
+      --neutral-bg:#232a22; --neutral-line:#333c31;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#121612; --surface:#1b211c; --surface-2:#242b24; --surface-3:#2e362d;
+    --line:#333d33; --text:#eef2ee; --text-dim:#9baa9e;
+    --accent:#f2a736; --accent-ink:#1a1204; --accent-soft:#3a2c11;
+    --good:#4fbf85; --good-bg:#16301f; --good-line:#245334;
+    --bad:#f0696c; --bad-bg:#3a1b1c; --bad-line:#5c2a2b;
+    --info:#6db2ef; --info-bg:#132537; --info-line:#20405c;
+    --neutral-bg:#232a22; --neutral-line:#333c31;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    padding:0 16px;
+  }
+  ::selection{background:var(--accent-soft);}
+  h1,h2,h3{font-family:var(--font-display);font-weight:700;text-wrap:balance;margin:0;}
+  .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+  button{font-family:var(--font-body);cursor:pointer;}
+  button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  a{color:var(--accent);}
+
+  .wrap{max-width:1180px;margin:0 auto;padding-block:20px 60px;}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    display:flex; flex-wrap:wrap; gap:14px 20px; align-items:flex-end;
+    justify-content:space-between; padding-bottom:16px; margin-bottom:16px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex; flex-direction:column; gap:2px;}
+  .brand .eyebrow{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-dim);
+  }
+  .brand h1{font-size:30px; line-height:1;}
+  .brand h1 .accent{color:var(--accent);}
+
+  .game-controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  select, .input, textarea{
+    background:var(--surface); border:1px solid var(--line); color:var(--text);
+    border-radius:8px; padding:9px 11px; font-size:14px; font-family:var(--font-body);
+  }
+  select{max-width:220px;}
+  .btn{
+    border:1px solid var(--line); background:var(--surface); color:var(--text);
+    border-radius:8px; padding:9px 14px; font-size:14px; font-weight:600;
+    display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+    transition:filter .1s ease, transform .05s ease;
+  }
+  .btn:hover{filter:brightness(1.05);}
+  .btn:active{transform:translateY(1px);}
+  .btn.primary{background:var(--accent); color:#ffffff; border-color:transparent;}
+  .btn.ghost{background:transparent;}
+  .btn.small{padding:6px 10px; font-size:12.5px; border-radius:7px;}
+  .btn.danger{color:var(--bad); border-color:var(--bad-line); background:var(--bad-bg);}
+  .btn:disabled{opacity:.45; cursor:not-allowed;}
+  .icon-btn{
+    width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:var(--surface);
+    display:inline-flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:15px;
+  }
+
+  .status-pill{
+    font-family:var(--font-mono); font-size:11px; padding:4px 9px; border-radius:99px;
+    border:1px solid var(--line); color:var(--text-dim); display:inline-flex; align-items:center; gap:6px;
+  }
+  .status-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--text-dim);}
+  .status-pill.live .dot{background:var(--good);}
+  .status-pill.offline .dot{background:var(--bad);}
+
+  /* ---------- layout ---------- */
+  .layout{display:grid; grid-template-columns:1fr 360px; gap:20px; align-items:start;}
+  @media (max-width:860px){ .layout{grid-template-columns:1fr;} }
+
+  .panel{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:20px;
+  }
+  .panel + .panel{margin-top:16px;}
+  .panel-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
+  .panel-head h2{font-size:20px;}
+  .panel-head .hint{font-size:12px; color:var(--text-dim); font-family:var(--font-mono);}
+
+  /* ---------- play/roster strip ---------- */
+  .console-top{display:flex; flex-wrap:wrap; gap:14px; margin-bottom:14px;}
+  .play-widget{
+    background:var(--neutral-bg); border:1px solid var(--neutral-line); border-radius:var(--radius);
+    padding:12px 16px; display:flex; align-items:center; gap:12px;
+  }
+  .play-widget .label{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--text-dim); text-transform:uppercase;}
+  .play-widget input[type=number]{
+    width:74px; font-family:var(--font-mono); font-size:26px; font-weight:600; text-align:center;
+    background:#1a1f1b; color:#ffffff; border:1px solid var(--line); border-radius:8px; padding:4px;
+  }
+  .step-group{display:flex; gap:4px;}
+  .step-group button{
+    width:30px;height:30px;border-radius:6px;border:1px solid var(--line); background:var(--surface);
+    font-family:var(--font-mono); font-size:12px; color:var(--text);
+  }
+
+  .roster-row{display:flex; flex-wrap:wrap; gap:10px; flex:1; align-items:center;}
+  .player-chip{
+    position:relative; border:1px solid var(--line); background:var(--surface-2); color:var(--text);
+    border-radius:9px; padding:12px 18px 12px 32px; font-weight:600; font-size:15px; min-height:44px;
+  }
+  .player-chip .kbd{
+    position:absolute; left:8px; top:50%; transform:translateY(-50%);
+    font-family:var(--font-mono); font-size:10px; color:var(--text-dim);
+    background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:2px 4px; line-height:1;
+  }
+  .player-chip.active{background:var(--accent); color:var(--accent-ink); border-color:transparent;}
+  .player-chip.active .kbd{background:rgba(0,0,0,.18); color:inherit; border-color:transparent;}
+  .player-block{display:flex; flex-direction:column; gap:6px; align-items:stretch;}
+  .quick-counts{display:flex; gap:6px;}
+  .mini-count{
+    flex:1; font-family:var(--font-mono); font-size:11px; border-radius:6px; border:1px solid var(--line);
+    background:var(--surface); color:var(--text-dim); padding:6px 7px; display:flex; justify-content:center; gap:4px;
+  }
+  .mini-count b{color:var(--text); font-weight:600;}
+  .mini-count:hover{filter:brightness(1.08);}
+  .grade-pill{
+    font-family:var(--font-mono); font-size:11.5px; font-weight:700; color:var(--accent-ink);
+    background:var(--accent); border-radius:6px; padding:2px 8px;
+  }
+  .point-badge{font-family:var(--font-mono); font-size:10.5px; font-weight:600; display:block;}
+  .code-chip .point-badge{opacity:.85; color:var(--text-dim);}
+  .code-chip.selected .point-badge{color:var(--accent-ink); opacity:1;}
+  td.grade-col{font-weight:700; color:var(--accent); font-size:13px;}
+
+  /* ---------- code grid ---------- */
+  .code-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(176px,1fr)); grid-auto-rows:1fr; gap:14px; margin-bottom:16px;}
+  .code-chip{
+    position:relative; text-align:left; border-radius:11px; border:1px solid var(--line);
+    background:var(--surface-2); padding:14px 16px 14px 38px; height:128px; box-sizing:border-box;
+    display:flex; flex-direction:column; justify-content:center; gap:4px; overflow:hidden;
+  }
+  .code-chip .kbd{
+    position:absolute; left:9px; top:11px;
+    font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim);
+    background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:2px 4px; line-height:1;
+  }
+  .code-chip .key{font-family:var(--font-mono); font-weight:700; font-size:17px; line-height:1.15;}
+  .code-chip .label{
+    font-size:12.5px; color:var(--text-dim); line-height:1.3;
+    display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; white-space:normal;
+  }
+  .code-chip.cat-positive{border-left:3px solid var(--good);}
+  .code-chip.cat-negative{border-left:3px solid var(--bad);}
+  .code-chip.cat-neutral{border-left:3px solid var(--info);}
+  .code-chip.selected{background:var(--accent); border-color:transparent;}
+  .code-chip.selected .label, .code-chip.selected .key{color:var(--accent-ink);}
+  .code-chip.selected .kbd{background:rgba(0,0,0,.18); color:var(--accent-ink); border-color:transparent;}
+  .code-chip .yards-row{display:flex; align-items:center; gap:5px; margin-top:3px; height:26px; visibility:visible;}
+  .code-chip .yards-row.placeholder{visibility:hidden;}
+  .code-chip .yards-row input{
+    width:58px; font-family:var(--font-mono); font-size:14px; padding:4px 6px; border-radius:6px;
+    border:1px solid var(--line); background:var(--surface);
+  }
+  .code-chip.selected .yards-row input{background:rgba(255,255,255,.75); color:#1a1204; border-color:transparent;}
+
+  .flags-row{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;}
+  .flag-toggle{
+    border-radius:9px; border:1px solid var(--line); background:#1a1f1b; color:#ffffff; padding:11px 16px;
+    font-size:14px; font-weight:600; display:inline-flex; align-items:center; gap:7px; min-height:44px;
+  }
+  .flag-toggle.on{background:var(--info); color:#fff; border-color:transparent;}
+  .flag-toggle.on.negative{background:var(--bad);}
+  .flag-toggle .kbd{font-family:var(--font-mono); font-size:9.5px; opacity:.8; background:rgba(0,0,0,.15); border-radius:4px; padding:1px 4px;}
+
+  textarea.note{width:100%; min-height:52px; resize:vertical; margin-bottom:12px;}
+
+  .console-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .console-actions .btn.primary{flex:1; justify-content:center; font-size:15px; padding:12px 16px;}
+
+  /* ---------- feed ---------- */
+  .feed{display:flex; flex-direction:column; gap:8px; max-height:420px; overflow-y:auto; padding-right:2px;}
+  .feed-item{
+    border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:var(--surface-2);
+    display:flex; align-items:flex-start; gap:8px;
+  }
+  .feed-item .play-no{font-family:var(--font-mono); font-weight:600; font-size:13px; background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:2px 6px; min-width:34px; text-align:center;}
+  .feed-item .body{flex:1; min-width:0;}
+  .feed-item .who{font-weight:600; font-size:13.5px;}
+  .feed-item .codes{font-family:var(--font-mono); font-size:12px; color:var(--text-dim); word-break:break-word;}
+  .feed-item .note-txt{font-size:12px; color:var(--text-dim); margin-top:2px; font-style:italic;}
+  .feed-item .flags{display:flex; gap:4px; margin-top:3px;}
+  .tag-mini{font-size:9.5px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.05em; border-radius:4px; padding:1px 5px;}
+  .tag-mini.neg{background:var(--bad-bg); color:var(--bad);}
+  .tag-mini.film{background:var(--info-bg); color:var(--info);}
+  .feed-item .item-actions{display:flex; flex-direction:column; gap:4px;}
+  .empty-note{color:var(--text-dim); font-size:13px; padding:14px 4px;}
+
+  /* ---------- export ---------- */
+  .tally-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  .tally-table th, .tally-table td{padding:6px 6px; border-bottom:1px solid var(--line); text-align:right; font-family:var(--font-mono); white-space:nowrap;}
+  .tally-table th:first-child, .tally-table td:first-child{text-align:left; font-family:var(--font-body); font-weight:600;}
+  .tally-table thead th{color:var(--text-dim); font-family:var(--font-mono); font-weight:500; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em;}
+  .tally-wrap{overflow-x:auto;}
+  #exportList{max-height:440px; overflow-y:auto; padding-right:4px; margin-right:-4px;}
+  .player-export{border:1px solid var(--line); border-radius:8px; padding:10px; margin-bottom:8px; background:var(--surface-2);}
+  .player-export .row-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;}
+  .player-export .row-head strong{font-size:14px;}
+  .export-field{margin-bottom:6px;}
+  .export-field .k{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-dim); display:block; margin-bottom:2px;}
+  .export-field .v{
+    font-family:var(--font-mono); font-size:11.5px; background:var(--surface); border:1px solid var(--line);
+    border-radius:6px; padding:5px 7px; word-break:break-all; max-height:70px; overflow-y:auto;
+  }
+
+  details.settings{margin-top:16px;}
+  details.settings summary{cursor:pointer; font-weight:600; font-size:14px; color:var(--text-dim);}
+  .settings-body{margin-top:12px; display:flex; flex-direction:column; gap:14px;}
+  .settings-grid{display:grid; grid-template-columns:1fr; gap:6px;}
+  .code-edit-row, .roster-edit-row{display:flex; gap:6px; align-items:center;}
+  .code-edit-row input.key-in{width:56px; font-family:var(--font-mono);}
+  .code-edit-row select{width:100px; padding:6px 8px; font-size:12px;}
+  .code-edit-row input.label-in, .roster-edit-row input{flex:1;}
+  .code-edit-row label.yard-lbl{font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:3px; white-space:nowrap;}
+
+  .shortcuts-panel{position:fixed; bottom:16px; right:16px; z-index:40;}
+  .shortcuts-fab{
+    width:38px;height:38px;border-radius:50%; background:var(--accent); color:var(--accent-ink);
+    border:none; font-family:var(--font-display); font-weight:700; font-size:17px; box-shadow:var(--shadow);
+  }
+  .shortcuts-sheet{
+    position:absolute; bottom:46px; right:0; width:280px; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; box-shadow:var(--shadow); padding:14px; font-size:12.5px;
+  }
+  .shortcuts-sheet h3{font-size:14px; margin-bottom:8px;}
+  .shortcuts-sheet .row{display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-bottom:1px dashed var(--line);}
+  .shortcuts-sheet .row .k{font-family:var(--font-mono); background:var(--neutral-bg); border-radius:4px; padding:1px 6px;}
+
+  .toast{
+    position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:var(--text); color:var(--bg);
+    padding:9px 16px; border-radius:8px; font-size:13px; z-index:60; box-shadow:var(--shadow);
+    opacity:0; pointer-events:none; transition:opacity .15s ease;
+  }
+  .toast.show{opacity:1;}
+
+  .new-game-form{display:flex; flex-wrap:wrap; gap:8px; align-items:center; background:var(--neutral-bg); border:1px solid var(--neutral-line); border-radius:8px; padding:10px; margin-top:10px;}
+  .new-game-form input{flex:1; min-width:120px;}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+</style>
+
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="eyebrow">WR Room · Film Tagger</span>
+      <h1>Tag<span class="accent">Reel</span></h1>
+    </div>
+    <div class="game-controls">
+      <span id="statusPill" class="status-pill"><span class="dot"></span><span id="statusText">connecting…</span></span>
+      <button class="btn small danger" id="clearLogBtn">Clear log for new game</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- LEFT: tagging console -->
+    <div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Tag a play</h2>
+          <span class="hint" id="editingHint"></span>
+        </div>
+
+        <div class="console-top">
+          <div class="play-widget">
+            <span class="label">Play&nbsp;#</span>
+            <input type="number" id="playNo" class="mono" value="1" min="0">
+            <div class="step-group">
+              <button data-step="1">+1</button>
+              <button data-step="5">+5</button>
+              <button data-step="-1">−1</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="rosterRow" class="roster-row" style="margin-bottom:14px;"></div>
+
+        <div id="codeGrid" class="code-grid"></div>
+
+        <div class="flags-row">
+          <button class="flag-toggle" id="flagTarget" data-kbd="J">Target (no catch/rush logged) <span class="kbd">J</span></button>
+          <button class="flag-toggle" id="flagNeg" data-kbd="U">Flag as negative play <span class="kbd">U</span></button>
+          <button class="flag-toggle" id="flagFilm" data-kbd="M">Show in film <span class="kbd">M</span></button>
+        </div>
+
+        <textarea id="noteField" class="note" placeholder="Coaching note for this play (optional)…"></textarea>
+
+        <div class="console-actions">
+          <button class="btn primary" id="logPlayBtn">Log play <span class="kbd" style="margin-left:6px;opacity:.75;">Enter</span></button>
+          <button class="btn ghost" id="clearBtn">Clear</button>
+          <button class="btn ghost" id="undoBtn">Undo last tag</button>
+        </div>
+      </div>
+
+      <details class="settings">
+        <summary>Roster &amp; code labels</summary>
+        <div class="settings-body">
+          <div>
+            <h3 style="font-size:14px;margin-bottom:6px;">Roster</h3>
+            <div id="rosterEdit" class="settings-grid"></div>
+            <div style="display:flex;gap:6px;margin-top:6px;">
+              <input id="newPlayerName" class="input" placeholder="Add player name" style="flex:1;">
+              <button class="btn small" id="addPlayerBtn">Add</button>
+            </div>
+          </div>
+          <div>
+            <h3 style="font-size:14px;margin-bottom:6px;">Codes (rename any label, or add your own)</h3>
+            <div id="codeEdit" class="settings-grid"></div>
+            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;">
+              <input id="newCodeKey" class="input key-in mono" placeholder="key" style="width:70px;">
+              <input id="newCodeLabel" class="input" placeholder="what it means" style="flex:1;min-width:120px;">
+              <input id="newCodePoints" type="number" step="0.5" class="input mono" placeholder="points" style="width:80px;">
+              <label class="yard-lbl"><input type="checkbox" id="newCodeYards"> takes yards</label>
+              <label class="yard-lbl"><input type="checkbox" id="newCodePerYard"> pts × yards</label>
+              <button class="btn small" id="addCodeBtn">Add code</button>
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- RIGHT: feed + export -->
+    <div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Play log</h2>
+          <span class="hint" id="entryCount">0 tags</span>
+        </div>
+        <div id="feed" class="feed"><div class="empty-note">No plays tagged yet for this game.</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Tallies</h2>
+          <span class="hint">auto-counted from tags</span>
+        </div>
+        <div class="tally-wrap">
+          <table class="tally-table" id="tallyTable"></table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Export</h2>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+          <button class="btn primary small" id="copyAllBtn">Copy all rows for Sheets</button>
+          <button class="btn small" id="downloadCsvBtn">Download CSV backup</button>
+        </div>
+        <div id="exportList"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="shortcuts-panel">
+  <button class="shortcuts-fab" id="shortcutsFab" aria-label="Keyboard shortcuts">?</button>
+  <div class="shortcuts-sheet" id="shortcutsSheet" style="display:none;"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Vendored same-origin so content blockers / privacy extensions can't block the
+     PocketBase SDK (which would silently fall back to "local only" mode). -->
+<script src="pocketbase.umd.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ---------------- helpers ----------------
+  function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function toast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._h);
+    toast._h = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  }
+  function todayISO(){ var d=new Date(); return d.toISOString().slice(0,10); }
+  function copyText(text){
+    return new Promise(function(resolve){
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){resolve(true);}).catch(function(){ fallback(); });
+      } else { fallback(); }
+      function fallback(){
+        try{
+          var ta=document.createElement('textarea');
+          ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+          document.body.appendChild(ta); ta.focus(); ta.select();
+          var ok=document.execCommand('copy');
+          document.body.removeChild(ta);
+          resolve(ok);
+        }catch(e){ resolve(false); }
+      }
+    });
+  }
+
+  // ---------------- light autocorrect for the coaching-note field ----------------
+  // Only fixes blatant, unambiguous misspellings — never rewords or touches grammar/punctuation.
+  var AUTOCORRECT_MAP = {
+    'teh':'the','adn':'and','hte':'the','wich':'which','becuase':'because','seperate':'separate',
+    'definately':'definitely','occured':'occurred','recieve':'receive','recieved':'received',
+    'beleive':'believe','acheive':'achieve','arguement':'argument','concious':'conscious',
+    'embarass':'embarrass','priviledge':'privilege','wierd':'weird','freind':'friend',
+    'excercise':'exercise','enviroment':'environment','existance':'existence',
+    'maintainance':'maintenance','neccessary':'necessary','occassion':'occasion',
+    'recomend':'recommend','publically':'publicly','untill':'until','alot':'a lot',
+    'thier':'their','commnuicate':'communicate','communcate':'communicate','tought':'thought',
+    'imrpove':'improve','sftey':'safety','saftey':'safety','langauge':'language','langugae':'language',
+    'attcking':'attacking','scrmable':'scramble','slignment':'alignment','opneed':'opened',
+    'yhou':'you','iwth':'with','relentlss':'relentless','spectular':'spectacular','ctach':'catch',
+    'everytime':'every time','gaurd':'guard','tackel':'tackle','tackels':'tackles',
+    'assingment':'assignment','asignment':'assignment','postion':'position','postioning':'positioning',
+    'agressive':'aggressive','agression':'aggression','begining':'beginning','comming':'coming',
+    'runing':'running','stoping':'stopping'
+  };
+  function correctWord(word){
+    var m = word.match(/^(\W*)([A-Za-z']+)(\W*)$/);
+    if(!m) return word;
+    var lead=m[1], core=m[2], trail=m[3];
+    var lower = core.toLowerCase();
+    if(!AUTOCORRECT_MAP.hasOwnProperty(lower)) return word;
+    var fix = AUTOCORRECT_MAP[lower];
+    if(core===core.toUpperCase() && core.length>1){ fix = fix.toUpperCase(); }
+    else if(core[0]===core[0].toUpperCase()){ fix = fix.charAt(0).toUpperCase()+fix.slice(1); }
+    return lead+fix+trail;
+  }
+  function correctText(text){
+    return text.replace(/\S+/g, correctWord);
+  }
+  function wireAutocorrect(el){
+    el.addEventListener('input', function(){
+      var val = el.value, pos = el.selectionStart;
+      if(pos>0 && /[\s,.;:!?]/.test(val[pos-1])){
+        var before = val.slice(0,pos-1);
+        var m = before.match(/(\S+)$/);
+        if(m){
+          var word = m[1], fixed = correctWord(word);
+          if(fixed!==word){
+            var wordStart = pos-1-word.length;
+            el.value = val.slice(0,wordStart)+fixed+val.slice(pos-1);
+            var delta = fixed.length-word.length;
+            el.setSelectionRange(pos+delta, pos+delta);
+          }
+        }
+      }
+    });
+    el.addEventListener('blur', function(){ el.value = correctText(el.value); });
+  }
+
+  var DEFAULT_ROSTER = ["Aidan","Zay","Martise","Jakari","Darrias","Josiah","Alijah","Chris","Tatt","Jonquil"];
+  // points: flat per occurrence, unless perYard===true (then points-per-yard × the logged yardage).
+  // "yards" just means the chip prompts for a yardage number to record in the play string.
+  // shortcut: fixed keyboard letter — chosen for the memorable word (Block->B, not GB's own "G"), not auto-picked.
+  var DEFAULT_CODES = [
+    {key:"TD",  label:"Touchdown",              yards:false, perYard:false, points:15, shortcut:"t"},
+    {key:"E",   label:"Relentless effort",      yards:false, perYard:false, points:5,  shortcut:"e"},
+    {key:"ER",  label:"Elite route",             yards:false, perYard:false, points:5,  shortcut:"x"},
+    {key:"GR",  label:"Good route",              yards:false, perYard:false, points:2,  shortcut:"g"},
+    {key:"GB",  label:"Good block",              yards:false, perYard:false, points:2,  shortcut:"b"},
+    {key:"P",   label:"Pancake",                 yards:false, perYard:false, points:14, shortcut:"p"},
+    {key:"FD",  label:"First down",              yards:false, perYard:false, points:5,  shortcut:"f"},
+    {key:"C",   label:"Catch + yards",           yards:true,  perYard:true,  points:0.5, shortcut:"c"},
+    {key:"R",   label:"Rush + yards",            yards:true,  perYard:true,  points:0.5, shortcut:"r"},
+    {key:"BT",  label:"Broken tackle",           yards:true,  perYard:false, points:2,  shortcut:"k"},
+    {key:"MA",  label:"Missed assignment",       yards:false, perYard:false, points:-10, shortcut:"a"},
+    {key:"SC",  label:"Spectacular catch",       yards:false, perYard:false, points:10, shortcut:"s"},
+    {key:"DP",  label:"Dropped pass",            yards:false, perYard:false, points:-15, shortcut:"d"},
+    {key:"H",   label:"Holding",                 yards:false, perYard:false, points:0,  shortcut:"h"},
+    {key:"BR",  label:"Bad route",               yards:false, perYard:false, points:-2, shortcut:"q"},
+    {key:"L",   label:"Loaf / laziness",         yards:false, perYard:false, points:-5, shortcut:"l"},
+    {key:"NFS", label:"Not full speed",          yards:false, perYard:false, points:-3, shortcut:"n"},
+    {key:"W",   label:"Whiffed",                 yards:false, perYard:false, points:-1, shortcut:"w"},
+    {key:"LF",  label:"Lack of focus",           yards:false, perYard:false, points:-2, shortcut:"o"},
+    {key:"BBL", label:"Bad body language",       yards:false, perYard:false, points:-2, shortcut:"y"},
+    {key:"EP",  label:"Extra point conversion",  yards:false, perYard:false, points:2,  shortcut:"v"}
+  ];
+  function catFor(code){ return code.points>0 ? 'positive' : (code.points<0 ? 'negative' : 'neutral'); }
+  function pointBadge(code){
+    if(code.perYard) return (code.points>0?'+':'')+code.points+' / yd';
+    return code.points===0 ? '0 pts' : (code.points>0?'+':'')+code.points+' pts'+(code.yards?' (flat)':'');
+  }
+
+  // ---------------- state ----------------
+  // One continuous, always-on log — no game/week picker. "Clear log for new game" resets it.
+  var state = {
+    db:null, downloads:null,
+    roster: DEFAULT_ROSTER.slice(),
+    codes: DEFAULT_CODES.map(function(c){return Object.assign({},c);}),
+    gameId:'current', game:{entries:[]}, entries:[],
+    unsubGame:null,
+    ui:{
+      player:null, playNo:1, selected:{}, note:'', flagNeg:false, flagFilm:false, flagTarget:false, editingId:null,
+      kbdMap:{} // char -> {type:'player'|'code', idx or key}
+    }
+  };
+
+  function localKey(k){ return 'tagreel_'+k; }
+  function saveLocal(k,v){ try{ localStorage.setItem(localKey(k), JSON.stringify(v)); }catch(e){} }
+  function loadLocal(k,fallback){ try{ var v=localStorage.getItem(localKey(k)); return v? JSON.parse(v): fallback; }catch(e){ return fallback; } }
+
+  // ---------------- shared store: PocketBase adapter ----------------
+  // Implements the same doc().get/set/update/onSnapshot surface the rest of
+  // the app already uses, backed by a single PocketBase collection "tagreel"
+  // with fields: name (unique key) + data (json). Falls back to localStorage
+  // if PocketBase is unreachable or the SDK didn't load.
+  function pbAdapter(pb, collection){
+    function snapFrom(rec){ return { exists:true, data:function(){ return rec.data; } }; }
+    function emptySnap(){ return { exists:false, data:function(){ return undefined; } }; }
+    function escFilter(v){ return String(v).replace(/'/g, "\\'"); }
+    async function find(name){
+      var rec = await pb.collection(collection).getFirstListItem("name='"+escFilter(name)+"'");
+      return rec;
+    }
+    function ref(name){
+      return {
+        get: function(){
+          return find(name).then(snapFrom).catch(function(e){
+            if(e && e.status===404) return emptySnap(); throw e;
+          });
+        },
+        set: function(data){
+          return find(name).then(function(rec){
+            return pb.collection(collection).update(rec.id, { data:data });
+          }).catch(function(e){
+            if(e && e.status===404) return pb.collection(collection).create({ name:name, data:data });
+            throw e;
+          });
+        },
+        update: function(partial){
+          return find(name).then(function(rec){
+            var merged = Object.assign({}, rec.data || {}, partial);
+            return pb.collection(collection).update(rec.id, { data:merged });
+          }).catch(function(e){
+            if(e && e.status===404) return pb.collection(collection).create({ name:name, data:partial });
+            throw e;
+          });
+        },
+        onSnapshot: function(cb, errCb){
+          var stopped=false, unsubFn=null;
+          ref(name).get().then(function(s){ if(!stopped) cb(s); }).catch(function(){ if(errCb) errCb(); });
+          pb.collection(collection).subscribe('*', function(e){
+            if(stopped) return;
+            var rec = e && e.record;
+            if(rec && rec.name===name){ cb(snapFrom(rec)); }
+          }).then(function(u){ unsubFn=u; }).catch(function(){ if(errCb) errCb(); });
+          return function(){ stopped=true; if(unsubFn) unsubFn(); };
+        }
+      };
+    }
+    return { doc: ref };
+  }
+  async function tryPocketbase(){
+    if(!window.PocketBase) return null;
+    var base = (location.pathname.replace(/film-tagger\.html.*$/, '').replace(/\/$/, '') || '') + '/pb';
+    try{
+      var pb = new window.PocketBase(base);
+      var health = await pb.health.check();
+      if(!health) return null;
+      return pbAdapter(pb, 'tagreel');
+    }catch(e){ return null; }
+  }
+
+  // ---------------- db bootstrap ----------------
+  async function boot(){
+    var statusText = document.getElementById('statusText');
+    var statusPill = document.getElementById('statusPill');
+    try{
+      state.db = await tryPocketbase();
+    }catch(e){ state.db = null; }
+    try{
+      state.downloads = (window.claude && window.claude.use) ? await window.claude.use('downloads') : null;
+    }catch(e){ state.downloads = null; }
+
+    if(!state.db){
+      statusPill.className='status-pill offline';
+      statusText.textContent='local only (not saved to shared log)';
+      state.roster = loadLocal('roster', DEFAULT_ROSTER.slice());
+      state.codes = loadLocal('codes', DEFAULT_CODES.slice());
+      state.game = loadLocal('session', {entries:[]});
+      state.entries = state.game.entries || [];
+      renderAll();
+      return;
+    }
+
+    statusPill.className='status-pill live';
+    statusText.textContent='synced';
+
+    // roster doc
+    state.db.doc('roster/main').get().then(function(snap){
+      if(snap.exists && snap.data().players){ state.roster = snap.data().players; }
+      else { state.db.doc('roster/main').set({players: state.roster}); }
+      renderRoster(); renderRosterEdit();
+    }).catch(function(){});
+    state.db.doc('roster/main').onSnapshot(function(snap){
+      if(snap.exists && snap.data().players){ state.roster = snap.data().players; renderRoster(); renderRosterEdit(); }
+    });
+
+    // codes doc
+    state.db.doc('codes/main').get().then(function(snap){
+      if(snap.exists && snap.data().codes){ state.codes = snap.data().codes; }
+      else { state.db.doc('codes/main').set({codes: state.codes}); }
+      renderCodeGrid(); renderCodeEdit();
+    }).catch(function(){});
+    state.db.doc('codes/main').onSnapshot(function(snap){
+      if(snap.exists && snap.data().codes){ state.codes = snap.data().codes; renderCodeGrid(); renderCodeEdit(); }
+    });
+
+    // the one session/log doc
+    state.db.doc('session/current').get().then(function(snap){
+      if(!snap.exists){ state.db.doc('session/current').set({entries:[], createdAt:new Date().toISOString()}); }
+    }).catch(function(){});
+    state.unsubGame = state.db.doc('session/current').onSnapshot(function(snap){
+      state.game = snap.exists ? snap.data() : {entries:[]};
+      state.entries = state.game.entries || [];
+      renderRoster(); renderFeed(); renderTallies(); renderExport();
+    }, function(){ toast('Could not load the saved log'); });
+  }
+
+  function persistEntries(){
+    if(state.db){
+      state.db.doc('session/current').update({entries: state.entries, updatedAt: new Date().toISOString()})
+        .catch(function(){ toast('Save failed — check connection'); });
+    } else {
+      state.game.entries = state.entries; saveLocal('session', state.game);
+    }
+    renderFeed(); renderTallies(); renderExport();
+  }
+
+  function persistRoster(){
+    if(state.db){ state.db.doc('roster/main').set({players: state.roster}); }
+    else { saveLocal('roster', state.roster); }
+    renderRoster();
+  }
+  function persistCodes(){
+    if(state.db){ state.db.doc('codes/main').set({codes: state.codes}); }
+    else { saveLocal('codes', state.codes); }
+    renderCodeGrid();
+  }
+
+  // ---------------- clear log ----------------
+  document.getElementById('clearLogBtn').addEventListener('click', function(){
+    if(!state.entries.length){
+      toast('Log is already empty'); return;
+    }
+    if(!confirm('Clear all tagged plays? This can\'t be undone — export first if you need this game\'s data.')) return;
+    state.entries = [];
+    state.game = {entries:[]};
+    if(state.db){ state.db.doc('session/current').set({entries:[], updatedAt:new Date().toISOString()}); }
+    else { saveLocal('session', state.game); }
+    renderRoster(); renderFeed(); renderTallies(); renderExport();
+    toast('Log cleared — ready for a new game');
+  });
+
+  // ---------------- render: roster row ----------------
+  // reserved for the fixed flag shortcuts below — never handed out to a player or code
+  var KBD_RESERVED = {'u':1,'m':1,'j':1};
+  function assignShortcuts(){
+    var used = Object.assign({}, KBD_RESERVED);
+    var map = {};
+    var i;
+    // players get digits 1-9,0
+    var digits = ['1','2','3','4','5','6','7','8','9','0'];
+    state.roster.forEach(function(name, idx){
+      if(idx < digits.length){ map[digits[idx]] = {type:'player', value:name}; used[digits[idx]]=1; }
+    });
+    // codes: each carries its own fixed, memorable letter (set in Settings) — only fall back to
+    // auto-picking one if it's missing or already taken by an earlier code.
+    var alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+    state.codes.forEach(function(c){
+      var fixed = (c.shortcut||'').toLowerCase();
+      var letter = (fixed && /^[a-z]$/.test(fixed) && !used[fixed]) ? fixed : null;
+      if(!letter){
+        var pref = (c.key[0]||'').toLowerCase();
+        if(pref && /[a-z]/.test(pref) && !used[pref]){ letter = pref; }
+      }
+      if(!letter){
+        for(i=0;i<alphabet.length;i++){ if(!used[alphabet[i]]){ letter=alphabet[i]; break; } }
+      }
+      if(letter){ used[letter]=1; map[letter] = {type:'code', value:c.key}; }
+    });
+    state.ui.kbdMap = map;
+  }
+
+  function kbdFor(type, value){
+    var map = state.ui.kbdMap;
+    for(var k in map){ if(map[k].type===type && map[k].value===value) return k.toUpperCase(); }
+    return '';
+  }
+
+  function snapCountFor(entries){
+    // a snap = a play this player was tagged on at all, however many codes it carries
+    var plays = {};
+    entries.forEach(function(e){ plays[e.play] = 1; });
+    return Object.keys(plays).length;
+  }
+  function isTargetPlay(e){
+    // a target is manual (you flip the Target toggle) but auto-picked-up when a Catch or Rush is logged
+    return !!e.target || e.codes.some(function(c){ return c.key==='C' || c.key==='R'; });
+  }
+  function targetCountFor(entries){ return entries.filter(isTargetPlay).length; }
+
+  function renderRoster(){
+    assignShortcuts();
+    var row = document.getElementById('rosterRow');
+    row.innerHTML = state.roster.map(function(name){
+      var active = state.ui.player===name;
+      var pe = state.entries.filter(function(e){return e.player===name;});
+      var snapN = snapCountFor(pe);
+      var tgtN = targetCountFor(pe);
+      return '<div class="player-block">'+
+        '<button class="player-chip'+(active?' active':'')+'" data-player="'+esc(name)+'">'+
+          '<span class="kbd">'+kbdFor('player',name)+'</span>'+esc(name)+'</button>'+
+        '<div class="quick-counts">'+
+          '<span class="mini-count" title="Counted automatically from logged plays">Snaps <b>'+snapN+'</b></span>'+
+          '<span class="mini-count" title="Catch/Rush codes count automatically; toggle Target on a play to add one manually">Tgt <b>'+tgtN+'</b></span>'+
+        '</div></div>';
+    }).join('');
+    Array.prototype.forEach.call(row.querySelectorAll('[data-player]'), function(btn){
+      btn.addEventListener('click', function(){ setPlayer(btn.getAttribute('data-player')); });
+    });
+    renderCodeGrid();
+  }
+
+  function setPlayer(name){ state.ui.player = name; renderRoster(); }
+
+  // ---------------- render: code grid ----------------
+  function renderCodeGrid(){
+    var grid = document.getElementById('codeGrid');
+    grid.innerHTML = state.codes.map(function(c){
+      var sel = state.ui.selected[c.key];
+      var yards = sel ? (sel.yards!=null? sel.yards : '') : '';
+      return '<div class="code-chip cat-'+catFor(c)+(sel?' selected':'')+'" data-code="'+esc(c.key)+'">'+
+        '<span class="kbd">'+kbdFor('code',c.key)+'</span>'+
+        '<span class="key">'+esc(c.key)+'</span>'+
+        '<span class="point-badge">'+esc(pointBadge(c))+'</span>'+
+        '<span class="label">'+esc(c.label)+'</span>'+
+        (c.yards ? '<span class="yards-row"><input type="number" placeholder="yds" data-yards="'+esc(c.key)+'" value="'+esc(yards)+'" '+(sel?'':'tabindex="-1"')+'></span>' : '<span class="yards-row placeholder"></span>')+
+        '</div>';
+    }).join('');
+    Array.prototype.forEach.call(grid.querySelectorAll('.code-chip'), function(chip){
+      chip.addEventListener('click', function(e){
+        if(e.target.matches('[data-yards]')) return;
+        toggleCode(chip.getAttribute('data-code'));
+      });
+    });
+    Array.prototype.forEach.call(grid.querySelectorAll('[data-yards]'), function(inp){
+      inp.addEventListener('click', function(e){ e.stopPropagation(); });
+      inp.addEventListener('input', function(){
+        var key = inp.getAttribute('data-yards');
+        if(state.ui.selected[key]) state.ui.selected[key].yards = inp.value;
+      });
+    });
+  }
+
+  function toggleCode(key){
+    if(state.ui.selected[key]){ delete state.ui.selected[key]; }
+    else {
+      var meta = state.codes.find(function(c){return c.key===key;});
+      state.ui.selected[key] = {yards: meta && meta.yards ? '' : null};
+    }
+    // auto-suggest negative flag when any selected code carries negative points
+    var anyNeg = Object.keys(state.ui.selected).some(function(k){
+      var meta = state.codes.find(function(c){return c.key===k;});
+      return meta && meta.points < 0;
+    });
+    if(anyNeg) state.ui.flagNeg = true;
+    renderCodeGrid();
+    renderFlags();
+    setTimeout(function(){
+      var inp = document.querySelector('[data-yards="'+key+'"]');
+      if(inp && state.ui.selected[key]) inp.focus();
+    },0);
+  }
+
+  function renderFlags(){
+    var neg = document.getElementById('flagNeg');
+    var film = document.getElementById('flagFilm');
+    var tgt = document.getElementById('flagTarget');
+    neg.className = 'flag-toggle'+(state.ui.flagNeg?' on negative':'');
+    film.className = 'flag-toggle'+(state.ui.flagFilm?' on':'');
+    tgt.className = 'flag-toggle'+(state.ui.flagTarget?' on':'');
+  }
+  document.getElementById('flagNeg').addEventListener('click', function(){ state.ui.flagNeg=!state.ui.flagNeg; renderFlags(); });
+  document.getElementById('flagFilm').addEventListener('click', function(){ state.ui.flagFilm=!state.ui.flagFilm; renderFlags(); });
+  document.getElementById('flagTarget').addEventListener('click', function(){ state.ui.flagTarget=!state.ui.flagTarget; renderFlags(); });
+
+  wireAutocorrect(document.getElementById('noteField'));
+
+  // ---------------- play number ----------------
+  var playNoInput = document.getElementById('playNo');
+  playNoInput.value = loadLocal('lastPlayNo', 1);
+  playNoInput.addEventListener('input', function(){ saveLocal('lastPlayNo', playNoInput.value); });
+  Array.prototype.forEach.call(document.querySelectorAll('.step-group [data-step]'), function(btn){
+    btn.addEventListener('click', function(){
+      var step = parseInt(btn.getAttribute('data-step'),10);
+      playNoInput.value = Math.max(0, (parseInt(playNoInput.value,10)||0) + step);
+      saveLocal('lastPlayNo', playNoInput.value);
+    });
+  });
+
+  // ---------------- log / clear / undo ----------------
+  function buildCodesArray(){
+    return Object.keys(state.ui.selected).map(function(k){
+      var v = state.ui.selected[k];
+      var out = {key:k};
+      if(v.yards !== null && v.yards !== '' && v.yards !== undefined) out.yards = Number(v.yards)||0;
+      return out;
+    });
+  }
+
+  function resetConsole(keepPlayer){
+    state.ui.selected = {};
+    state.ui.flagNeg = false;
+    state.ui.flagFilm = false;
+    state.ui.flagTarget = false;
+    state.ui.editingId = null;
+    document.getElementById('noteField').value = '';
+    document.getElementById('editingHint').textContent = '';
+    document.getElementById('logPlayBtn').innerHTML = 'Log play <span class="kbd" style="margin-left:6px;opacity:.75;">Enter</span>';
+    renderCodeGrid(); renderFlags();
+  }
+
+  document.getElementById('logPlayBtn').addEventListener('click', logPlay);
+  function logPlay(){
+    if(!state.ui.player){ toast('Pick a player first'); return; }
+    var codes = buildCodesArray();
+    var note = correctText(document.getElementById('noteField').value.trim());
+    // no code, no note, no flags is fine — that's "on the field for this snap, nothing notable happened"
+    var snapOnly = !codes.length && !note && !state.ui.flagNeg && !state.ui.flagFilm && !state.ui.flagTarget;
+    var play = parseInt(playNoInput.value,10) || 0;
+    // A player can only be added to a play record once per play number — block duplicates.
+    var dup = state.entries.find(function(e){
+      return e.play === play && e.player === state.ui.player && e.id !== state.ui.editingId;
+    });
+    if(dup){
+      toast(state.ui.player + ' is already on play ' + play + ' — edit that tag instead of adding another');
+      editEntry(dup.id);
+      return;
+    }
+    var entry = {
+      id: state.ui.editingId || uid(),
+      play: play, player: state.ui.player, codes: codes, note: note,
+      negative: state.ui.flagNeg, showFilm: state.ui.flagFilm, target: state.ui.flagTarget, ts: new Date().toISOString()
+    };
+    if(state.ui.editingId){
+      state.entries = state.entries.map(function(e){ return e.id===entry.id? entry : e; });
+    } else {
+      state.entries = state.entries.concat([entry]);
+    }
+    persistEntries();
+    resetConsole();
+    toast(snapOnly ? 'Logged play '+play+' — '+state.ui.player+' (snap only, no action)' : 'Logged play '+play+' — '+state.ui.player);
+  }
+
+  document.getElementById('clearBtn').addEventListener('click', function(){ resetConsole(); });
+  document.getElementById('undoBtn').addEventListener('click', function(){
+    if(!state.entries.length){ toast('Nothing to undo'); return; }
+    var last = state.entries[state.entries.length-1];
+    state.entries = state.entries.slice(0,-1);
+    persistEntries();
+    toast('Removed last tag (play '+last.play+', '+last.player+')');
+  });
+
+  function editEntry(id){
+    var e = state.entries.find(function(x){return x.id===id;});
+    if(!e) return;
+    state.ui.editingId = id;
+    state.ui.player = e.player;
+    state.ui.flagNeg = !!e.negative;
+    state.ui.flagFilm = !!e.showFilm;
+    state.ui.flagTarget = !!e.target;
+    state.ui.selected = {};
+    e.codes.forEach(function(c){ state.ui.selected[c.key] = {yards: c.yards!=null? c.yards : null}; });
+    playNoInput.value = e.play;
+    document.getElementById('noteField').value = e.note || '';
+    document.getElementById('editingHint').textContent = 'Editing play '+e.play+' — '+e.player;
+    document.getElementById('logPlayBtn').innerHTML = 'Update play';
+    renderRoster(); renderCodeGrid(); renderFlags();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  function deleteEntry(id){
+    state.entries = state.entries.filter(function(x){return x.id!==id;});
+    persistEntries();
+  }
+
+  // ---------------- format helpers (match legacy sheet format) ----------------
+  function codeString(codes){
+    return codes.map(function(c){ return c.yards!=null && c.yards!=='' ? c.key+'+'+c.yards : c.key; }).join(',');
+  }
+  function fullLogString(playerEntries){
+    return playerEntries.slice().sort(function(a,b){return a.play-b.play;})
+      .map(function(e){ return e.play+'('+codeString(e.codes)+')'; })
+      .filter(function(s){ return !s.endsWith('()'); })
+      .join(',');
+  }
+  function flaggedLogString(playerEntries){
+    return playerEntries.filter(function(e){return e.negative;}).slice().sort(function(a,b){return a.play-b.play;})
+      .map(function(e){ return e.play+'('+codeString(e.codes)+')'; })
+      .join(',');
+  }
+  function showFilmString(playerEntries){
+    return playerEntries.filter(function(e){return e.showFilm;}).map(function(e){return e.play;})
+      .sort(function(a,b){return a-b;}).join(',');
+  }
+  function notesString(playerEntries){
+    return playerEntries.filter(function(e){return e.note;}).slice().sort(function(a,b){return a.play-b.play;})
+      .map(function(e){ return e.play+'('+e.note+')'; }).join(', ');
+  }
+
+  function countCode(entries, key){ return entries.filter(function(e){ return e.codes.some(function(c){return c.key===key;}); }).length; }
+  function sumYards(entries, key){
+    return entries.reduce(function(sum,e){
+      var c = e.codes.find(function(c){return c.key===key;});
+      return sum + (c && c.yards ? c.yards : 0);
+    },0);
+  }
+  function gradeFor(entries){
+    var total = entries.reduce(function(sum,e){
+      return sum + e.codes.reduce(function(s,c){
+        var meta = state.codes.find(function(m){return m.key===c.key;});
+        if(!meta) return s;
+        return s + (meta.perYard ? meta.points * (c.yards||0) : meta.points);
+      },0);
+    },0);
+    return Math.round(total*10)/10;
+  }
+
+  // ---------------- render: feed ----------------
+  function renderFeed(){
+    var feed = document.getElementById('feed');
+    document.getElementById('entryCount').textContent = state.entries.length + ' tag' + (state.entries.length===1?'':'s');
+    if(!state.entries.length){ feed.innerHTML = '<div class="empty-note">No plays tagged yet for this game.</div>'; return; }
+    var sorted = state.entries.slice().sort(function(a,b){ return b.play-a.play || (b.ts||'').localeCompare(a.ts||''); });
+    feed.innerHTML = sorted.map(function(e){
+      return '<div class="feed-item">'+
+        '<span class="play-no mono">'+e.play+'</span>'+
+        '<div class="body">'+
+          '<div class="who">'+esc(e.player)+'</div>'+
+          '<div class="codes">'+esc(codeString(e.codes)||'—')+'</div>'+
+          (e.note? '<div class="note-txt">"'+esc(e.note)+'"</div>':'')+
+          '<div class="flags">'+(e.negative?'<span class="tag-mini neg">negative</span>':'')+(e.showFilm?'<span class="tag-mini film">film</span>':'')+'</div>'+
+        '</div>'+
+        '<div class="item-actions">'+
+          '<button class="icon-btn" data-edit="'+e.id+'" title="Edit">✎</button>'+
+          '<button class="icon-btn" data-del="'+e.id+'" title="Delete">×</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+    Array.prototype.forEach.call(feed.querySelectorAll('[data-edit]'), function(b){ b.addEventListener('click', function(){ editEntry(b.getAttribute('data-edit')); }); });
+    Array.prototype.forEach.call(feed.querySelectorAll('[data-del]'), function(b){ b.addEventListener('click', function(){ deleteEntry(b.getAttribute('data-del')); }); });
+  }
+
+  // ---------------- render: tallies ----------------
+  function renderTallies(){
+    var table = document.getElementById('tallyTable');
+    var cols = ['Player','Snaps','Targets','Catches','Drops','Rec Yds','Rushes','Rush Yds','TD','MA','Loaf','Grade'];
+    var rows = state.roster.map(function(name){
+      var pe = state.entries.filter(function(e){return e.player===name;});
+      var snaps = snapCountFor(pe);
+      var targets = targetCountFor(pe);
+      if(!pe.length) return null;
+      return [name, snaps, targets, countCode(pe,'C'), countCode(pe,'DP'), sumYards(pe,'C'),
+        countCode(pe,'R'), sumYards(pe,'R'), countCode(pe,'TD'), countCode(pe,'MA'), countCode(pe,'L')+countCode(pe,'LF'), gradeFor(pe)];
+    }).filter(Boolean);
+    if(!rows.length){ table.innerHTML = '<tr><td style="padding:8px;color:var(--text-dim);font-family:var(--font-body);">No tags yet.</td></tr>'; return; }
+    table.innerHTML = '<thead><tr>'+cols.map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr></thead>'+
+      '<tbody>'+rows.map(function(r){
+        return '<tr>'+r.map(function(v,i){ return '<td'+(i===r.length-1?' class="grade-col"':'')+'>'+esc(v)+'</td>'; }).join('')+'</tr>';
+      }).join('')+'</tbody>';
+  }
+
+  // ---------------- render: export ----------------
+  function buildExportRows(){
+    return state.roster.map(function(name){
+      var pe = state.entries.filter(function(e){return e.player===name;});
+      var snaps = snapCountFor(pe);
+      var targets = targetCountFor(pe);
+      return {
+        player:name, snaps:snaps,
+        targets:targets, catches:countCode(pe,'C'), drops:countCode(pe,'DP'),
+        recYards:sumYards(pe,'C'), rushes:countCode(pe,'R'), rushYards:sumYards(pe,'R'),
+        td:countCode(pe,'TD'), ma:countCode(pe,'MA'), loaf:countCode(pe,'L')+countCode(pe,'LF'),
+        fullLog:fullLogString(pe), flaggedLog:flaggedLogString(pe), showFilm:showFilmString(pe), notes:notesString(pe),
+        grade:gradeFor(pe),
+        hasData: pe.length>0
+      };
+    }).filter(function(r){return r.hasData;});
+  }
+  function rowToTSV(r){
+    // matches the original sheet's 15 columns exactly, in order — Grade is shown in-app only, not exported
+    return [r.player,r.snaps,r.targets,r.drops,r.catches,r.recYards,r.rushes,r.rushYards,r.td,r.ma,r.loaf,r.fullLog,r.flaggedLog,r.showFilm,r.notes].join('\t');
+  }
+  function renderExport(){
+    var rows = buildExportRows();
+    var el = document.getElementById('exportList');
+    if(!rows.length){ el.innerHTML = '<div class="empty-note">Tag some plays to see export data here.</div>'; return; }
+    el.innerHTML = rows.map(function(r){
+      return '<div class="player-export">'+
+        '<div class="row-head"><span><strong>'+esc(r.player)+'</strong> <span class="grade-pill">'+(r.grade>=0?'+':'')+r.grade+'</span></span><button class="btn small" data-copyrow="'+esc(r.player)+'">Copy row</button></div>'+
+        '<div class="export-field"><span class="k">Key play ++</span><div class="v">'+esc(r.fullLog||'—')+'</div></div>'+
+        '<div class="export-field"><span class="k">Key play --</span><div class="v">'+esc(r.flaggedLog||'—')+'</div></div>'+
+        '<div class="export-field"><span class="k">Show in film</span><div class="v">'+esc(r.showFilm||'—')+'</div></div>'+
+        '<div class="export-field"><span class="k">Notes</span><div class="v">'+esc(r.notes||'—')+'</div></div>'+
+      '</div>';
+    }).join('');
+    Array.prototype.forEach.call(el.querySelectorAll('[data-copyrow]'), function(b){
+      b.addEventListener('click', function(){
+        var name = b.getAttribute('data-copyrow');
+        var r = rows.find(function(x){return x.player===name;});
+        copyText(rowToTSV(r)).then(function(ok){ toast(ok? name+"'s row copied — paste into the sheet" : 'Copy failed, select the text manually'); });
+      });
+    });
+  }
+  document.getElementById('copyAllBtn').addEventListener('click', function(){
+    var rows = buildExportRows();
+    if(!rows.length){ toast('Nothing to export yet'); return; }
+    var tsv = rows.map(rowToTSV).join('\n');
+    copyText(tsv).then(function(ok){ toast(ok? rows.length+' rows copied — paste starting at the Player column' : 'Copy failed, use Download CSV instead'); });
+  });
+  document.getElementById('downloadCsvBtn').addEventListener('click', async function(){
+    var rows = buildExportRows();
+    if(!rows.length){ toast('Nothing to export yet'); return; }
+    // header names and column order match the original sheet exactly, so this pastes/uploads in place
+    var header = ['Player','Snap count','Targets','Drops','Catches','Rec Yards','Rushes','Rush Yards','Touchdowns','Missed Assignment','Loaf','Key play ++','Key play --','Show in film','Notes'];
+    function csvCell(v){ v = String(v==null?'':v); return '"'+v.replace(/"/g,'""')+'"'; }
+    var lines = [header.map(csvCell).join(',')].concat(rows.map(function(r){
+      return [r.player,r.snaps,r.targets,r.drops,r.catches,r.recYards,r.rushes,r.rushYards,r.td,r.ma,r.loaf,r.fullLog,r.flaggedLog,r.showFilm,r.notes].map(csvCell).join(',');
+    }));
+    var csv = lines.join('\n');
+    var fname = 'film-tags_' + todayISO() + '.csv';
+    if(state.downloads){
+      try{
+        await state.downloads.save({filename:fname, data:csv});
+        toast('Saved '+fname);
+      }catch(e){ toast('Download declined or unavailable'); }
+    } else {
+      copyText(csv).then(function(){ toast('Downloads unavailable here — CSV copied to clipboard instead'); });
+    }
+  });
+
+  // ---------------- settings: roster edit ----------------
+  function renderRosterEdit(){
+    var wrap = document.getElementById('rosterEdit');
+    wrap.innerHTML = state.roster.map(function(name,idx){
+      return '<div class="roster-edit-row">'+
+        '<input class="input" data-roster-idx="'+idx+'" value="'+esc(name)+'">'+
+        '<button class="icon-btn" data-roster-del="'+idx+'" title="Remove">×</button>'+
+      '</div>';
+    }).join('');
+    Array.prototype.forEach.call(wrap.querySelectorAll('[data-roster-idx]'), function(inp){
+      inp.addEventListener('change', function(){
+        var idx = parseInt(inp.getAttribute('data-roster-idx'),10);
+        var old = state.roster[idx];
+        state.roster[idx] = inp.value.trim() || old;
+        if(state.ui.player===old) state.ui.player = state.roster[idx];
+        persistRoster();
+      });
+    });
+    Array.prototype.forEach.call(wrap.querySelectorAll('[data-roster-del]'), function(b){
+      b.addEventListener('click', function(){
+        var idx = parseInt(b.getAttribute('data-roster-del'),10);
+        state.roster.splice(idx,1);
+        persistRoster(); renderRosterEdit();
+      });
+    });
+  }
+  document.getElementById('addPlayerBtn').addEventListener('click', function(){
+    var inp = document.getElementById('newPlayerName');
+    var name = inp.value.trim();
+    if(!name) return;
+    state.roster.push(name);
+    inp.value='';
+    persistRoster(); renderRosterEdit();
+  });
+
+  // ---------------- settings: code edit ----------------
+  function renderCodeEdit(){
+    var wrap = document.getElementById('codeEdit');
+    wrap.innerHTML = state.codes.map(function(c,idx){
+      return '<div class="code-edit-row">'+
+        '<input class="input key-in mono" data-code-idx="'+idx+'" data-field="key" value="'+esc(c.key)+'">'+
+        '<input class="input label-in" data-code-idx="'+idx+'" data-field="label" value="'+esc(c.label)+'">'+
+        '<input class="input mono" style="width:72px;" type="number" step="0.5" data-code-idx="'+idx+'" data-field="points" value="'+esc(c.points)+'">'+
+        '<input class="input mono" style="width:44px;text-align:center;" maxlength="1" title="Keyboard shortcut letter" data-code-idx="'+idx+'" data-field="shortcut" value="'+esc((c.shortcut||'').toUpperCase())+'">'+
+        '<label class="yard-lbl"><input type="checkbox" data-code-idx="'+idx+'" data-field="yards" '+(c.yards?'checked':'')+'> yds</label>'+
+        '<label class="yard-lbl"><input type="checkbox" data-code-idx="'+idx+'" data-field="perYard" '+(c.perYard?'checked':'')+'> pts×yds</label>'+
+        '<button class="icon-btn" data-code-del="'+idx+'" title="Remove">×</button>'+
+      '</div>';
+    }).join('');
+    Array.prototype.forEach.call(wrap.querySelectorAll('[data-code-idx]'), function(el){
+      el.addEventListener('change', function(){
+        var idx = parseInt(el.getAttribute('data-code-idx'),10);
+        var field = el.getAttribute('data-field');
+        if(field==='yards' || field==='perYard'){ state.codes[idx][field] = el.checked; }
+        else if(field==='key'){ state.codes[idx].key = el.value.trim().toUpperCase() || state.codes[idx].key; }
+        else if(field==='points'){ state.codes[idx].points = parseFloat(el.value)||0; }
+        else if(field==='shortcut'){ state.codes[idx].shortcut = el.value.trim().toLowerCase().slice(0,1); }
+        else { state.codes[idx][field] = el.value; }
+        persistCodes(); renderCodeEdit();
+      });
+    });
+    Array.prototype.forEach.call(wrap.querySelectorAll('[data-code-del]'), function(b){
+      b.addEventListener('click', function(){
+        var idx = parseInt(b.getAttribute('data-code-del'),10);
+        state.codes.splice(idx,1);
+        persistCodes(); renderCodeEdit();
+      });
+    });
+  }
+  document.getElementById('addCodeBtn').addEventListener('click', function(){
+    var key = document.getElementById('newCodeKey').value.trim().toUpperCase();
+    var label = document.getElementById('newCodeLabel').value.trim();
+    var points = parseFloat(document.getElementById('newCodePoints').value)||0;
+    var yards = document.getElementById('newCodeYards').checked;
+    var perYard = document.getElementById('newCodePerYard').checked;
+    if(!key || !label){ toast('Enter both a key and a meaning'); return; }
+    if(state.codes.some(function(c){return c.key===key;})){ toast('That key already exists'); return; }
+    state.codes.push({key:key, label:label, yards:yards, perYard:perYard, points:points});
+    document.getElementById('newCodeKey').value=''; document.getElementById('newCodeLabel').value='';
+    document.getElementById('newCodePoints').value=''; document.getElementById('newCodeYards').checked=false; document.getElementById('newCodePerYard').checked=false;
+    persistCodes(); renderCodeEdit();
+  });
+
+  // ---------------- shortcuts panel ----------------
+  document.getElementById('shortcutsFab').addEventListener('click', function(){
+    var sheet = document.getElementById('shortcutsSheet');
+    if(sheet.style.display==='none'){
+      var rows = '<div class="row"><span>Log play</span><span class="k">Enter</span></div>'+
+                 '<div class="row"><span>Bump play # by 1 / 5</span><span class="k">↑ / Shift+↑</span></div>'+
+                 '<div class="row"><span>Toggle target flag (use if no Catch/Rush logged)</span><span class="k">J</span></div>'+
+                 '<div class="row"><span>Toggle negative flag</span><span class="k">U</span></div>'+
+                 '<div class="row"><span>Toggle show-in-film flag</span><span class="k">M</span></div>'+
+                 '<div class="row"><span>Undo last tag</span><span class="k">Backspace</span></div>'+
+                 '<div class="row"><span>Clear console</span><span class="k">Esc</span></div>'+
+                 Object.keys(state.ui.kbdMap).sort().map(function(k){
+                   var m = state.ui.kbdMap[k];
+                   var label = m.type==='player'? m.value : (state.codes.find(function(c){return c.key===m.value;})||{}).label || m.value;
+                   return '<div class="row"><span>'+esc(label)+'</span><span class="k">'+k.toUpperCase()+'</span></div>';
+                 }).join('');
+      sheet.innerHTML = '<h3>Keyboard shortcuts</h3>'+rows+'<p style="margin-top:8px;color:var(--text-dim);font-size:11px;">Shortcuts are inactive while typing in a text field. Double-click a player chip to add a snap.</p>';
+      sheet.style.display='block';
+    } else { sheet.style.display='none'; }
+  });
+
+  // ---------------- global keyboard shortcuts ----------------
+  document.addEventListener('keydown', function(e){
+    var tag = (document.activeElement && document.activeElement.tagName || '').toLowerCase();
+    var typing = tag==='textarea' || tag==='input' || tag==='select';
+    if(typing && e.key!=='Escape' && e.key!=='Enter') {
+      if(!(e.key==='Enter' && tag==='input')) return;
+    }
+    if(e.key==='Enter'){ e.preventDefault(); logPlay(); return; }
+    if(e.key==='Escape'){ resetConsole(); return; }
+    if(e.key==='Backspace' && !typing){ e.preventDefault(); document.getElementById('undoBtn').click(); return; }
+    if(e.key==='ArrowUp'){ e.preventDefault(); playNoInput.value = (parseInt(playNoInput.value,10)||0) + (e.shiftKey?5:1); saveLocal('lastPlayNo', playNoInput.value); return; }
+    if(e.key==='ArrowDown'){ e.preventDefault(); playNoInput.value = Math.max(0,(parseInt(playNoInput.value,10)||0) - (e.shiftKey?5:1)); saveLocal('lastPlayNo', playNoInput.value); return; }
+    if(typing) return;
+    var k = e.key.toLowerCase();
+    if(k==='u'){ state.ui.flagNeg=!state.ui.flagNeg; renderFlags(); return; }
+    if(k==='m'){ state.ui.flagFilm=!state.ui.flagFilm; renderFlags(); return; }
+    if(k==='j'){ state.ui.flagTarget=!state.ui.flagTarget; renderFlags(); return; }
+    var mapped = state.ui.kbdMap[k];
+    if(mapped){
+      if(mapped.type==='player') setPlayer(mapped.value);
+      else toggleCode(mapped.value);
+    }
+  });
+
+  function renderAll(){ renderRoster(); renderCodeGrid(); renderFlags(); renderRosterEdit(); renderCodeEdit(); renderFeed(); renderTallies(); renderExport(); }
+
+  // ---------------- hot reload snapshot (state carried across republish) ----------------
+  function start(){
+    boot();
+  }
+  if(window.claude && window.claude.hot){
+    if(window.claude.hot.ready) window.claude.hot.ready(start); else start();
+  } else {
+    start();
+  }
+})();
+</script>
