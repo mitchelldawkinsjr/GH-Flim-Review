@@ -1,0 +1,35 @@
+Player,Snap count,Targets,Drops,Catches,Rec Yards,Rushes,Rush Yards,Touchdowns,Missed Assignment,Loaf,Key play ++,Key play --,Show in flim,Notes
+Aidan,38,8,0,0,0,5,33,1,0,0,"19(R+0),30(GR),31(R+5,BT+3),35(GB),64(GB),94(R+24,FD),103(R+2),104(R+2,TD,BT+1)","65(W),89(W)",,"17(Terrible pass, not counting this as a drop, QB has to get the ball down), 22(This ball shouldn't have been thrown to you here, bad decision by QB.), 31(Nice rush and way to make people miss.), 35(Good job being ready to block if the catch was made), 65(Blocking effort here was off not sure if it was the person or not but whiffed), 89(no real attempt to get a good base and block.), 93(Bad ball not sure where the QB was throwing this pass...), 94(Nice job hittin gthe lane and getting up field !!), 104(Nice job getting into the endzone!)"
+Zay,32,3,1,1,6,0,0,0,1,0,"19(GB,E),22(E),24(GR),30(GR)34(GR),58(C+6),94(GB)","22(E,BBL),31(MA,NFS,W),57(DP)",,"19(Nice blokc and great effort here i like the nastiness of the blocking IF you get ever DB's smaller than you its your time to throw them around!), 22(your WIDE OPEN qb missed the TD here. Be careful with body language), 24(Solid route ball was uncatchable landed out of bounds.), 31(Aye this might be the worst rep iv ever seen you have, Make sure you going full speed and getting to your assignment. Aidan made the play buiyou completely missed your block.), 34(Overthrown ball. Good route nice job selling the out first, i do think you could sell it better by slowing your route when you faking the out then turning it back up when you get vertical but QB missed another QB this game.... wide open), 57(This was 100% catchable gotta find a way to catch this one)"
+Martise,34,4,0,1,0,1,9,0,1,0,"24(GR),30(GB),65(R+9,FD),74(GB),90(GB),94(GB,E),115(C+0)","17(W),19(MA)",,"17(Whiffed on the block here make sure you don't over run the block point.), 19(Your defender ended up winning at the block point and made the tackle), 23(Terrible ball from QB here not on you.), 24(Nice job making finding the open space.), 76(uncatchable ball, not much you can do), 94(GREAT BLOCK opened up the run lane !)"
+Jakari,38,2,0,1,40,0,0,0,1,2,"16(GB),20(C+40,BT+3,GR),21(GB),34(GR),35(LF),65(GB),104(GB,E)","35(LF),89(MA,W),115(LF,W)",,"20(Nice initial route getting to the open spot. Even better job following scramble rules and getting yourself open + downfield. Breaking tackles and really opening up the speed showing your game us dynamic and you can do a lot with the ball in your hands. Your confidence is showing good job!!! Eventually you will learn to pick up your feet when you breaking away so those show string tackles don't work.), 34(Not bad on the route, make sure to sell the out more before you get back vertical), 35(Bad ball so i wont say drop here but this look catchable so lack of focus was what i decided was fair.), 65(good job now holding here came close but you made the right choice to let go), 89(Completely missed block here and seemed like you weren't ready for the rep when the  snap happened gotta make sure you maintain focus ALSO on bubble missing this block leaves the slot vulnerable  to being BLOWN up), 104(Its annoying at WR to have good effort on the goalline run plays this was good effort and needed, good job.), 115(Didn't do the best job holding your block here the level of effort is low i'm assuming its because the game was won ??), 116(uncatchable ball)"
+Alijah,7,0,0,0,0,0,0,0,0,0,"104(GB,E)",,,104(Your block allowed the TD nice job !!)
+Benard,2,1,0,0,0,1,2,0,0,0,"40(GB),66(R+2)",,,40(Nice job at the point of contact)
+Chris,,,,,,,,,,,,,,
+Jonquil,,,,,,,,,,,,,,
+Darrias,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+,,,,,,Total Snaps,,,,Total Loafs,,,,
+,,,,,,38,,,,2,,,,
+,Code,Name,Point Amount,,,,,,,,,Group Notes,Show in flim,
+,(TD),Touchdown,15,,,,,,,,,,,
+,(E),Relentless Effort,14,,,,,,,,,,,
+,(ER),Elite route,7,,,,,,,,,,,
+,(GR),Good route,2,,,,,,,,,,,
+,(C+n),Catch + n yards,0.5,,,,,,,,,,,
+,(GB),Good block,2,,,,,,,,,,,
+,(P),Pancake,10,,,,,,,,,,,
+,(FD),First down,5,,,,,,,,,,,
+,(R+N),Rush + N yards,0.5,,,,,, ,,,,,
+,(MA),Missed Assignment,-10,,,,,,,,,,,
+,(SC),Spectular catch,10,,,,,,,,,,,
+,(DP),Dropped Pass,-15,,,,,,,,,,,
+,(H),Holding,0,,,,,,,,,,,
+,(BR),Bad Route,-2,,,,,,,,,,,
+,(L),Loaf Laziness,-2,,,,,,,,,,,
+,(NFS),NOT FULL SPEED,-3,,,,,,,,,,,
+,(W),Whiffed,-1,,,,,,,,,,,
+,(BT+n),Broken Tackle + n ,0.5,,,,,,,,,,,
+,(LF),Lack of Focus,-0.5,,,,,,,,,,,
+,(BBL),Bad Body Langugae,-0.5,,,,,,,,,,,
+,EP,Extra Point Conversion,2,,,,,,,,,,,
