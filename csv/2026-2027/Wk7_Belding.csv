@@ -1,0 +1,35 @@
+Player,Snap count,Targets,Drops,Catches,Rec Yards,Rushes,Rush Yards,Touchdowns,Missed Assignment,Loaf,Key play ++,Key play --,Show in flim,Notes
+Aidan,28,7,0,1,23,5,26,1,0,0,"18(GB),19(R+0),26(R+0),49(R+7,BT+1),52(R+0),68(W),69(BT+1,R+19,E),74(GR,C+23,TD)",68(W),,"26(Not much you could have done differently here.), 49(Great rush !), 68(Keep a good base so when you are blocking a db cant easily move and toss you around.), 69(Great rush here and nice vision finding the lane to run. Rewatch this one you actually made the safety fall.), 70(Fight back to the ball here and force the DB to run through you by stopping and working back to the ball.), 74(NICE ROUTE!!! full speed blow pass the DB well done !!! TD.)"
+Zay,33,5,0,5,76,0,0,1,0,2,"18(GB),23(E,GB),26(LF,E,GB),48(C+39,FD,GR),51(E),53(TD,C+10),67(E),72(GB),99(LF,W),100(C+11),106(C+6),107(C+10),108(GB)","26(LF,E,GB),99(LF,W)",,"19(Lets make sure we get off the line with good speed and explosion.), 23(Nice job getting back to the block point after initially falling off of the block. Great Effort, nice job.), 26(i'm not sure how you even got in position to make this block, great level of effort. It matters good job. Pay attention to the snap so you get off the line on time.), 48(Nice catch contested over the shoulder. Good route getting to the open spot of the field with speed and hand fighting, good job being aggressive and attacking the ball), 53(Nice contested catch !! Strong hands and attacking the ball, did great here remembering scramble rules and flipping your body to be able to make this catch good job!), 67(Got to the right spot but your aggression and base wasn't right make sure you keep a good base so you cant be tossed so easily.), 99(Tried to make the block but you got beat here, Not a full MA but have to make sure you don't let your feet die and you drive them hard.), 107(Tough catch knowing a hit is coming well done!)"
+Martise,32,2,0,2,46,0,0,1,1,1,"21(C+8),23(GB),24(GB),26(GB,E),28(E,C+38,TD,SC),47(GB),67(GB,P),69(GB,LF),72(GB),97(MA)","69(GB,LF),97(MA)",,"21(Nice job getting up field after the catch.), 23(did enough to keep your defender out of the play, nice job), 26(Nice block going to get the bigger body and running the feet really well!), 28(HUGE play and nice catch ! Elite route and awareness. Looks like Seattle switch then went to scramble drill. Just a great job adjusting on the fly and making a tough catch on a broken play. Big play Big moment. GREAT CATCH!!!), 67(If mark doesn't come ""help"" I think you were about to get a pancake so i'm counting it.), 69(I gave you a. good block here because you started the rep blocking hard, BUT  you let the db go and he ended up making the tackle just remember to block downfield that opens up big plays), 97(Completely missed your block here make sure you get to the block point not to where the db is pre play)"
+Jakari,38,1,0,0,0,0,0,0,0,1,"21(GB,E),22(GB),24(GB),28(GR),46(E),51(E),52(GB),69(GB,E),98(W,LF),108(E)","98(W,LF)",,"21(Nice work running your feet and letting go once the DB was out of your frame. Good job.), 27(This is 100% Pass Interference . No flag thrown but contact was when the ball was in the air here. You have to do a better job of either selling that contact more OR fighting through the contact to make the catch.), 28(Good route, your route held the safety inside, good job!), 46(Good effort backside getting to the block), 52(Don't stop your feet thats why you got pushed back here), 69(as always good blocking and great effort.), 98(Did not get to the block point here.)"
+Darrias,10,0,0,0,0,0,0,0,1,0,"46(E,GB),47(MA)",47(MA),,"46(Nice job finding work and getting to a block.), 47(Completely missed your block here.)"
+Alijah,14,1,0,1,15,0,0,0,0,0,"18(GB),51(GB,P),72(C+15,FD)",,,"51(Im counting this as a pancake NICE JOB!), 72(Nice catch and great job getting down the field well done!)"
+Chris,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+,,,,,,Total Snaps,,,,Total Loafs,,,,
+,,,,,,38,,,,4,,,,
+,Code,Name,Point Amount,,,,,,,,,Group Notes,Show in flim,
+,(TD),Touchdown,15,,,,,,,,,,,
+,(E),Relentless Effort,14,,,,,,,,,,,
+,(ER),Elite route,7,,,,,,,,,,,
+,(GR),Good route,2,,,,,,,,,,,
+,(C+n),Catch + n yards,0.5,,,,,,,,,,,
+,(GB),Good block,2,,,,,,,,,,,
+,(P),Pancake,10,,,,,,,,,,,
+,(FD),First down,5,,,,,,,,,,,
+,(R+N),Rush + N yards,0.5,,,,,, ,,,,,
+,(MA),Missed Assignment,-10,,,,,,,,,,,
+,(SC),Spectular catch,10,,,,,,,,,,,
+,(DP),Dropped Pass,-15,,,,,,,,,,,
+,(H),Holding,0,,,,,,,,,,,
+,(BR),Bad Route,-2,,,,,,,,,,,
+,(L),Loaf Laziness,-2,,,,,,,,,,,
+,(NFS),NOT FULL SPEED,-3,,,,,,,,,,,
+,(W),Whiffed,-1,,,,,,,,,,,
+,(BT+n),Broken Tackle + n ,0.5,,,,,,,,,,,
+,(LF),Lack of Focus,-0.5,,,,,,,,,,,
+,(BBL),Bad Body Langugae,-0.5,,,,,,,,,,,
+,EP,Extra Point Conversion,2,,,,,,,,,,,
